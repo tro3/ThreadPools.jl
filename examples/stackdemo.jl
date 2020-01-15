@@ -63,6 +63,9 @@ function run_demo(distribution)
     stack2 = deepcopy(stack1)
     N0 = length(stack1)
 
+
+    # Background Stack
+
     jobs1 = Job[]
     t0 = time()
     pool = ThreadPool()
@@ -98,10 +101,11 @@ function run_demo(distribution)
         yield()
     end
 
-
     println("\n\n@bgthreads, Active Job Per Thread on 200ms Intervals\n")
     show_activity(jobs1)
 
+
+    # @threads Stack
 
     tasks = Channel{Task}(Inf)
     jobs2 = Job[]
@@ -137,9 +141,10 @@ function run_demo(distribution)
     println("\n\n@threads, Active Job Per Thread on 200ms Intervals\n")
     show_activity(jobs2)
 
+
     eff = round(100*(duration(jobs1)/duration(jobs2)-1), digits=1)
     exp = round(100*(Threads.nthreads()/(Threads.nthreads()-1)-1), digits=1)
-    println("\nSpeed increase using all threads (ideal $exp%): $eff%")    
+    println("\nSpeed increase using @threads (ideal $exp%): $eff%")    
 end
 
 end
