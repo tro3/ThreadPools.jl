@@ -11,7 +11,7 @@ and
 that behave like the originals but generate spawned tasks 
 that stay purely on background threads.
 
-Documentation at https://tro3.github.io/ThreadPool.jl
+Documentation at https://tro3.github.io/ThreadPools.jl
 
 ## Overview
 
