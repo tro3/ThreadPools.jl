@@ -24,7 +24,6 @@ mutable struct ThreadPool
         Threads.@threads for i in 1:Threads.nthreads()
             if allow_primary || Threads.threadid() > 1
                 @async for t in pool.inq
-                    Threads.atomic_add!(pool.cnt, 1)
                     schedule(t)
                     wait(t)
                     put!(pool.outq, t)
@@ -44,7 +43,10 @@ end
 Put the task `t` into the pool, blocking until the pool has
 an available thread.
 """
-Base.put!(pool::ThreadPool, t::Task) = put!(pool.inq, t)
+function Base.put!(pool::ThreadPool, t::Task)
+    Threads.atomic_add!(pool.cnt, 1)    
+    put!(pool.inq, t)
+end
 
 
 """

@@ -1,7 +1,6 @@
 # ThreadPools.jl
 
-_Improved background Task management, keeping heavy Julia computations off the
-primary thread_
+_Improved thread management for nonuniform tasks_
 
 A simple package that creates a few functions mimicked from `Base`
 ([`bgforeach`](https://tro3.github.io/ThreadPool.jl/build/index.html#ThreadPool.bgforeach-Tuple{Any,Any}), 

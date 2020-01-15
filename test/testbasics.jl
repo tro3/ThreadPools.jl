@@ -41,6 +41,36 @@ end
     @test [x.data for x in objs] == collect(2:N+1)
 end
 
+@testset "fgforeach" begin
+    N = Threads.nthreads() == 1 ? 2 : (Threads.nthreads()-1)*2
+    objs = [TestObj(x) for x in 1:N]
+    fn! = (x) -> begin
+        x.data += 1
+    end
+    fgforeach(fn!, objs)
+    @test [x.data for x in objs] == collect(2:N+1)
+    @inferred fgforeach(fn!, objs)
+end
+
+@testset "fgmap" begin
+    N = Threads.nthreads() == 1 ? 2 : (Threads.nthreads()-1)*2
+    objs = [TestObj(x) for x in 1:N]
+    fn = x -> begin
+        x.data
+    end
+    @test fgmap(fn, objs) == collect(1:N)
+    @inferred fgmap(fn, objs)
+end
+
+@testset "@fgthreads" begin
+    N = Threads.nthreads() == 1 ? 2 : (Threads.nthreads()-1)*2
+    objs = [TestObj(x) for x in 1:N]
+    @fgthreads for obj in objs
+        obj.data += 1
+    end
+    @test [x.data for x in objs] == collect(2:N+1)
+end
+
 
 if Threads.nthreads() > 1
     @testset "Task distribution" begin
