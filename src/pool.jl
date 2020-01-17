@@ -105,3 +105,30 @@ Returns `true` if there are queued Tasks anywhere in the pool, either
 awaiting execution, executing, or waiting to be retrieved.
 """
 isactive(pool::ThreadPool) = isready(pool.inq) || isready(pool.outq) || pool.cnt[] > 0
+
+
+
+#############################
+# Result Iterator
+#############################
+
+struct ResultIterator
+    pool :: ThreadPool
+end
+
+"""
+    ThreadPools.results(pool::ThreadPool) -> result iterator
+
+Returns an iterator over the `fetch`ed results of the pooled tasks.
+"""
+results(pool::ThreadPool) = ResultIterator(pool)
+
+function Base.iterate(itr::ResultIterator, state=nothing)
+    x = iterate(itr.pool.outq, state)
+    isnothing(x) && return nothing
+    return fetch(x[1]), nothing
+end
+
+Base.IteratorSize(::ResultIterator) = Base.SizeUnknown()
+Base.IteratorEltype(::ResultIterator) = Base.EltypeUnknown() 
+

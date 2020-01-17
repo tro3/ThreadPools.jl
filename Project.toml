@@ -1,7 +1,7 @@
 name = "ThreadPools"
 uuid = "b189fb0b-2eb5-4ed4-bc0c-d34c51242431"
 authors = ["Trey Roessig <roessig.trey@gmail.com"]
-version = "0.1.0"
+version = "0.2.0"
 
 [compat]
 julia = "1.3"

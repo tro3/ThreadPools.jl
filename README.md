@@ -1,6 +1,6 @@
 # ThreadPools.jl
 
-_Improved thread management for nonuniform tasks_
+_Improved thread management for background and nonuniform tasks_
 
 A simple package that creates a few functions mimicked from `Base`
 ([`bgforeach`](https://tro3.github.io/ThreadPool.jl/build/index.html#ThreadPool.bgforeach-Tuple{Any,Any}), 

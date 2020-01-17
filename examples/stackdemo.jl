@@ -90,8 +90,7 @@ function run_demo(distribution)
         close(pool)
     end
 
-    for task in pool
-        job, newnodes = fetch(task)
+    for (job, newnodes) in results(pool)
         push!(jobs1, job)
         for node in newnodes
             push!(stack, node)

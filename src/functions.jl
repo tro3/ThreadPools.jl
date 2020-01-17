@@ -140,8 +140,7 @@ function _poolmap(fn, allow_primary, itrs)
             end
             close(pool)
         end
-        for t in pool
-            (ind, y) = fetch(t)
+        for (ind, y) in results(pool)
             @inbounds result[ind] = y
         end
         return result

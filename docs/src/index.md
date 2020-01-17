@@ -1,7 +1,7 @@
 
 # ThreadPools.jl Documentation
 
-_Improved thread management for nonuniform tasks_
+_Improved thread management for background and nonuniform tasks_
 
 A simple package that creates a few functions mimicked from `Base`
 ([`bgforeach`](@ref), [`bgmap`](@ref), and [`@bgthreads`](@ref))
