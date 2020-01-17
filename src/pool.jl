@@ -19,6 +19,7 @@ mutable struct ThreadPool
     cnt  :: Threads.Atomic{Int}
 
     ThreadPool(allow_primary=false) = begin
+        allow_primary = allow_primary || Threads.nthreads() == 1
         N = Threads.nthreads() - (allow_primary ? 0 : 1)
         pool = new(Channel{Task}(N), Channel{Task}(N), Threads.Atomic{Int}(0))
         Threads.@threads for i in 1:Threads.nthreads()
