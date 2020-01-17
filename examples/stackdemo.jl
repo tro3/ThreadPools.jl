@@ -67,38 +67,35 @@ function run_demo(distribution)
     # Background Stack
 
     jobs1 = Job[]
-    t0 = time()
+    stack = Channel{WorkNode}(Inf)
+    for node in stack1
+        push!(stack, node)
+    end
     pool = ThreadPool()
-    lck = ReentrantLock()
     index = 0
+    t0 = time()
 
     running = true
     @async begin
         while running
-            node = nothing
-            lock(lck)
-            length(stack1) > 0 && (node = pop!(stack1))
-            unlock(lck)
-            if isnothing(node)
-                running = isactive(pool)
-            else
+            if isready(stack)
                 index += 1
-                put!(pool, stack_fn, index, node, t0)
+                put!(pool, stack_fn, index, take!(stack), t0)
+            else
+                running = isactive(pool)
             end
-            sleep(1e-4)
+            sleep(1e-5)
             yield()
         end
         close(pool)
     end
 
     for task in pool
-        job, newjobs = fetch(task)
+        job, newnodes = fetch(task)
         push!(jobs1, job)
-        lock(lck)
-        append!(stack1, newjobs)
-        unlock(lck)
-        sleep(1e-4)
-        yield()
+        for node in newnodes
+            push!(stack, node)
+        end
     end
 
     println("\n\n@bgthreads, Active Job Per Thread on 200ms Intervals\n")
@@ -108,9 +105,10 @@ function run_demo(distribution)
     # @threads Stack
 
     tasks = Channel{Task}(Inf)
+    lck = ReentrantLock()
     jobs2 = Job[]
-    t0 = time()
     index = 0
+    t0 = time()
     while length(stack2) > 0
         N = length(stack2)
         @async begin
@@ -130,10 +128,10 @@ function run_demo(distribution)
 
         for i in 1:N
             task = take!(tasks)
-            job, newjobs = fetch(task)
+            job, newnodes = fetch(task)
             push!(jobs2, job)
             lock(lck)
-            append!(stack2, newjobs)
+            append!(stack2, newnodes)
             unlock(lck)
         end
     end
