@@ -1,5 +1,6 @@
 .DS_Store
-/Manifest.toml
+Manifest.toml
 /dev/
 lcov.info
 .vscode
+log.txt

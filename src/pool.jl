@@ -1,6 +1,7 @@
 
 const MaybeTask = Union{Nothing, Task}
 
+
 """
     ThreadPool(allow_primary=false)
 
@@ -18,22 +19,28 @@ mutable struct ThreadPool
     outq :: Channel{Task}
     cnt  :: Threads.Atomic{Int}
 
-    ThreadPool(allow_primary=false) = begin
+    ThreadPool(allow_primary=false, handler=_default_handler) = begin
         N = Threads.nthreads() - (allow_primary ? 0 : 1)
         pool = new(Channel{Task}(N), Channel{Task}(N), Threads.Atomic{Int}(0))
         Threads.@threads for i in 1:Threads.nthreads()
             if allow_primary || Threads.threadid() > 1
-                @async for t in pool.inq
-                    schedule(t)
-                    wait(t)
-                    put!(pool.outq, t)
-                    Threads.atomic_sub!(pool.cnt, 1)
-                end
+                @async handler(pool)
+                println("finished async")
             end
         end
+        println("finished setup")
         return pool
     end
 
+end
+
+function _default_handler(pool::ThreadPool)
+    for t in pool.inq
+        schedule(t)
+        wait(t)
+        put!(pool.outq, t)
+        Threads.atomic_sub!(pool.cnt, 1)
+    end
 end
 
 
