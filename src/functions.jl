@@ -1,3 +1,4 @@
+
 """
     bgforeach(fn, itrs...) -> Nothing
 
@@ -18,8 +19,8 @@ julia> bgforeach([1,2,3]) do x
 ```
 Note that the execution order across the threads is not guaranteed.
 """
-bgforeach(fn, itr)     = _poolforeach(fn, false, (itr,))
-bgforeach(fn, itrs...) = _poolforeach(fn, false, itrs)
+bgforeach(fn, itr)     = Threads.nthreads() == 1 ? foreach(fn, itr)     : _poolforeach(fn, ThreadPool(), (itr,))
+bgforeach(fn, itrs...) = Threads.nthreads() == 1 ? foreach(fn, itrs...) : _poolforeach(fn, ThreadPool(), itrs)
 
 
 """
@@ -41,23 +42,18 @@ julia> fgforeach([1,2,3,4,5]) do x
 ```
 Note that the primary thread was used to process indexes 2 and 5, in this case.
 """
-fgforeach(fn, itr)     = _poolforeach(fn, true, (itr,))
-fgforeach(fn, itrs...) = _poolforeach(fn, true, itrs)
+fgforeach(fn, itr)     = Threads.nthreads() == 1 ? foreach(fn, itr)     : _poolforeach(fn, ThreadPool(true), (itr,))
+fgforeach(fn, itrs...) = Threads.nthreads() == 1 ? foreach(fn, itrs...) : _poolforeach(fn, ThreadPool(true), itrs)
 
-function _poolforeach(fn, allow_primary, itrs)
-    if Threads.nthreads() == 1
-        return foreach(fn, itrs...)
-    else
-        pool = ThreadPool(allow_primary)
-        @async begin
-            for item in zip(itrs...)
-                put!(pool, fn, item...)
-            end
-            close(pool)
+function _poolforeach(fn, pool, itrs)
+    @async begin
+        for item in zip(itrs...)
+            put!(pool, fn, item...)
         end
-        collect(pool)
-        nothing
+        close(pool)
     end
+    collect(pool)
+    nothing
 end
 
 
@@ -88,8 +84,8 @@ julia> bgmap([1,2,3]) do x
 Note that while the thread execution order is not guaranteed, the final 
 result will maintain the proper sequence.
 """
-bgmap(fn, itr)::Vector{_detect_type(fn, itr)}      = _poolmap(fn, false, (itr,))
-bgmap(fn, itrs...)::Vector{_detect_type(fn, itrs)} = _poolmap(fn, false, itrs)
+bgmap(fn, itr)::Vector{_detect_type(fn, itr)}      = Threads.nthreads() == 1 ? map(fn, itr)     : _poolmap(fn, ThreadPool(), (itr,))
+bgmap(fn, itrs...)::Vector{_detect_type(fn, itrs)} = Threads.nthreads() == 1 ? map(fn, itrs...) : _poolmap(fn, ThreadPool(), itrs)
 
 
 """
@@ -120,33 +116,28 @@ julia> fgmap([1,2,3,4,5]) do x
 ```
 Note that the primary thread was used to process index 2, in this case.
 """
-fgmap(fn, itr)::Vector{_detect_type(fn, itr)}      = _poolmap(fn, true, (itr,))
-fgmap(fn, itrs...)::Vector{_detect_type(fn, itrs)} = _poolmap(fn, true, itrs)
+fgmap(fn, itr)::Vector{_detect_type(fn, itr)}      = Threads.nthreads() == 1 ? map(fn, itr)     : _poolmap(fn, ThreadPool(true), (itr,))
+fgmap(fn, itrs...)::Vector{_detect_type(fn, itrs)} = Threads.nthreads() == 1 ? map(fn, itrs...) : _poolmap(fn, ThreadPool(true), itrs)
 
 _detect_type(fn, itr) = eltype(map(fn, empty(itr)))
 _detect_type(fn, itrs::Tuple) = eltype(map(fn, [empty(x) for x in itrs]...))
 
-function _poolmap(fn, allow_primary, itrs)
-    if Threads.nthreads() == 1
-        return map(fn, itrs...)
-    else
-        N = length(zip(itrs...))
-        result = Vector{_detect_type(fn, itrs)}(undef, N)
-        _fn = (ind, x) -> (ind, fn(x...))
-        pool = ThreadPool(allow_primary)
-        @async begin
-            for (ind, item) in enumerate(zip(itrs...))
-                put!(pool, _fn, ind, item)
-            end
-            close(pool)
+function _poolmap(fn, pool, itrs)
+    N = length(zip(itrs...))
+    result = Vector{_detect_type(fn, itrs)}(undef, N)
+    _fn = (ind, x) -> (ind, fn(x...))
+    @async begin
+        for (ind, item) in enumerate(zip(itrs...))
+            put!(pool, _fn, ind, item)
         end
-        for t in pool
-            (ind, y) = fetch(t)
-            @inbounds result[ind] = y
-        end
-        return result
+        close(pool)
     end
+    for (ind, y) in results(pool)
+        @inbounds result[ind] = y
+    end
+    return result
 end
+
 
 """
     @bgthreads

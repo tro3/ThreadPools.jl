@@ -1,6 +1,7 @@
 
 const MaybeTask = Union{Nothing, Task}
 
+
 """
     ThreadPool(allow_primary=false)
 
@@ -18,25 +19,32 @@ mutable struct ThreadPool
     outq :: Channel{Task}
     cnt  :: Threads.Atomic{Int}
 
-    ThreadPool(allow_primary=false) = begin
+    ThreadPool(allow_primary=false, handler=_default_handler) = begin
+        allow_primary = allow_primary || Threads.nthreads() == 1
         allow_primary = allow_primary || Threads.nthreads() == 1
         N = Threads.nthreads() - (allow_primary ? 0 : 1)
         pool = new(Channel{Task}(N), Channel{Task}(N), Threads.Atomic{Int}(0))
         Threads.@threads for i in 1:Threads.nthreads()
             if allow_primary || Threads.threadid() > 1
-                @async for t in pool.inq
-                    schedule(t)
-                    wait(t)
-                    put!(pool.outq, t)
-                    Threads.atomic_sub!(pool.cnt, 1)
-                end
+                @async handler(pool)
             end
         end
         return pool
     end
-
 end
 
+function _default_handler(pool::ThreadPool)
+    for t in pool.inq
+        schedule(t)
+        wait(t)
+        put!(pool.outq, t)
+        Threads.atomic_sub!(pool.cnt, 1)
+    end
+end
+
+function finalize(pool::ThreadPool)
+    close(pool)
+end
 
 """
     Base.put!(pool::ThreadPool, t::Task)
@@ -106,3 +114,52 @@ Returns `true` if there are queued Tasks anywhere in the pool, either
 awaiting execution, executing, or waiting to be retrieved.
 """
 isactive(pool::ThreadPool) = isready(pool.inq) || isready(pool.outq) || pool.cnt[] > 0
+
+
+
+#############################
+# Result Iterator
+#############################
+
+struct ResultIterator
+    pool :: ThreadPool
+end
+
+"""
+    results(pool::ThreadPool) -> result iterator
+
+Returns an iterator over the `fetch`ed results of the pooled tasks.
+
+# Example
+
+```julia
+julia> pool = ThreadPool();
+
+julia> @async begin
+         for i in 1:4
+           put!(pool, x -> 2*x, i)
+         end
+         close(pool)
+       end;
+
+julia> for r in results(pool)
+         println(r)
+       end
+6
+2
+4
+8
+```
+Note that the execution order across the threads is not guaranteed.
+"""
+results(pool::ThreadPool) = ResultIterator(pool)
+
+function Base.iterate(itr::ResultIterator, state=nothing)
+    x = iterate(itr.pool.outq, state)
+    isnothing(x) && return nothing
+    return fetch(x[1]), nothing
+end
+
+Base.IteratorSize(::ResultIterator) = Base.SizeUnknown()
+Base.IteratorEltype(::ResultIterator) = Base.EltypeUnknown() 
+

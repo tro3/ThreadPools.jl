@@ -1,12 +1,15 @@
 
 # ThreadPools.jl Documentation
 
-_Improved thread management for nonuniform tasks_
+_Improved thread management for background and nonuniform tasks_
 
 A simple package that creates a few functions mimicked from `Base`
 ([`bgforeach`](@ref), [`bgmap`](@ref), and [`@bgthreads`](@ref))
 that behave like the originals but generate spawned tasks 
-that stay purely on background threads.
+that stay purely on background threads.  For better throughput with more
+uniform tasks, [`fgforeach`](@ref), [`fgmap`](@ref), and 
+[`@fgthreads`](@ref) are also provided, and logging versions of all
+of the above are included for tuning purposes.
 
 ## Overview
 
@@ -16,18 +19,27 @@ restriction is not important - except in very specific instances, pure
 computational activities will run faster using all threads.  But in some cases, 
 we may want to keep the primary thread free of blocking tasks.  For example, a 
 GUI running on the primary thread will become unresponsive if a computational 
-task hits.  For another, parallel computations with very nonuniform processing
-times can benefit from sacrificing the primary thread to manage the loads on
-the remaining ones.
+task hits.  As another example, parallel computations with very nonuniform 
+processing times can benefit from sacrificing the primary thread to manage the 
+loads on the remaining ones.
 
 ThreadPools is a simple package that allows background-only Task assignment for 
-cases where this makes sense.  (As Julia matures, it is hoped this package is 
-made obsolete.)  The standard `foreach`,  `map`, and `@threads` functions are 
-mimicked, adding a `bg` prefix to each to denote background operation: 
-[`bgforeach`](@ref), [`bgmap`](@ref), [`@bgthreads`](@ref).  Code that runs 
-with one of  those Base functions should run just fine with the `bg` prepended, 
-but adding multithreading for free in the `foreach` and `map` cases, and in 
-all cases keeping the primary thread free of blocking Tasks.
+cases where this makes sense.  The standard `foreach`,  `map`, and `@threads` 
+functions are mimicked, adding a `bg` prefix to each to denote background 
+operation: [`bgforeach`](@ref), [`bgmap`](@ref), and [`@bgthreads`](@ref).  
+Code that runs with one of  those Base functions should run just fine with the 
+`bg` prepended, but adding multithreading for free in the `foreach` and `map` 
+cases, and in all cases keeping the primary thread free of blocking Tasks.
+
+When the user would still like to include the primary thread, `fg` versions of
+the above functions are provided: [`fgforeach`](@ref), [`fgmap`](@ref), 
+and [`@fgthreads`](@ref).  These can provide a little more throughput, though
+there will be occasional interruption of the thread management by the spawned
+tasks.  Finally, all of the above have a logged counterpart: 
+[`ThreadPools.logbgforeach`](@ref), [`ThreadPools.logbgmap`](@ref), 
+[`ThreadPools.@logbgthreads`](@ref), [`ThreadPools.logfgforeach`](@ref), 
+[`ThreadPools.logfgmap`](@ref), and [`ThreadPools.@logfgthreads`](@ref).
+
 
 ## Usage
 
@@ -63,6 +75,43 @@ julia> @bgthreads for x in 1:3
 ```
 For an example of a more complex load-management scenario, see 
 `examples/stackdemo.jl`.
+
+
+## Logger Usage
+
+The logging versions of the functions take in an IO as the log, or and string
+that will cause a new file to be created and used by the log.  The `readlog`
+and `showactivity` functions help visualize the activity:
+
+```julia
+julia> io = IOBuffer();
+
+julia> ThreadPools.logfgforeach(x -> sleep(0.1*x), io, 1:8)
+
+julia> log = ThreadPools.readlog(IOBuffer(String(take!(io))))
+Dict{Int64,Array{Tuple{Int64,Int64,Float64,Float64},1}} with 4 entries:
+  4 => Tuple{Int64,Int64,Float64,Float64}[(2, 4, 0.016, 0.228), (6, 4, 0.228, 0.842)]
+  2 => Tuple{Int64,Int64,Float64,Float64}[(1, 2, 0.016, 0.127), (5, 2, 0.127, 0.639)]
+  3 => Tuple{Int64,Int64,Float64,Float64}[(3, 3, 0.016, 0.342), (7, 3, 0.342, 1.043)]
+  1 => Tuple{Int64,Int64,Float64,Float64}[(4, 1, 0.016, 0.435), (8, 1, 0.435, 1.246)]
+
+julia> ThreadPools.showactivity(log, 0.1)
+0.000   -   -   -   -
+0.100   4   1   3   2
+0.200   4   5   3   2
+0.300   4   5   3   6
+0.400   4   5   7   6
+0.500   8   5   7   6
+0.600   8   5   7   6
+0.700   8   -   7   6
+0.800   8   -   7   6
+0.900   8   -   7   -
+1.000   8   -   7   -
+1.100   8   -   -   -
+1.200   8   -   -   -
+1.300   -   -   -   -
+1.400   -   -   -   -
+```
 
 ## Demonstrations
 
@@ -120,11 +169,17 @@ or `Base.Threads` to keep any code rework to a minimum.
 * [`bgforeach(fn, itr)`](@ref)
 * [`bgmap(fn, itr)`](@ref)
 * [`@bgthreads`](@ref)
+* [`fgforeach(fn, itr)`](@ref)
+* [`fgmap(fn, itr)`](@ref)
+* [`@fgthreads`](@ref)
 
 ```@docs
 bgforeach(fn, itr)
 bgmap(fn, itr)
 @bgthreads
+fgforeach(fn, itr)
+fgmap(fn, itr)
+@fgthreads
 ```
 
 # ThreadPool API
@@ -139,7 +194,8 @@ in the same way a `Channel` would be.
 * [`Base.put!(pool::ThreadPool, fn::Function, args...)`](#Base.put!(pool::ThreadPools.ThreadPool, fn::Function, args...))
 * [`Base.take!(pool::ThreadPool, ind::Integer)`](#Base.take!(pool::ThreadPools.ThreadPool, ind::Integer))
 * [`Base.close(pool::ThreadPool)`](#Base.close(pool::ThreadPools.ThreadPool))
-* [`ThreadPools.isactive(pool::ThreadPool)`](@ref)
+* [`isactive(pool::ThreadPool)`](@ref)
+* [`results(pool::ThreadPool)`](@ref)
 
 ```@docs
 ThreadPools.ThreadPool
@@ -147,7 +203,34 @@ Base.put!(pool::ThreadPools.ThreadPool, t::Task)
 Base.put!(pool::ThreadPools.ThreadPool, fn::Function, args...)
 Base.take!(pool::ThreadPools.ThreadPool)
 Base.close(pool::ThreadPools.ThreadPool)
-ThreadPools.isactive(pool::ThreadPool)
+isactive(pool::ThreadPool)
+results(pool::ThreadPool)
 ```
 
+# Logging API
 
+For performance tuning, it can be useful to substitute in a logger that can be
+used to analyze the thread activity.  `LoggingThreadPool` is provided for this
+purpose.
+
+* [`ThreadPools.logbgforeach`](@ref)
+* [`ThreadPools.logbgmap`](@ref)
+* [`ThreadPools.@logbgthreads`](@ref)
+* [`ThreadPools.logfgforeach`](@ref)
+* [`ThreadPools.logfgmap`](@ref)
+* [`ThreadPools.@logfgthreads`](@ref)
+* [`ThreadPools.readlog`](@ref)
+* [`ThreadPools.showactivity`](@ref)
+* [`ThreadPools.LoggingThreadPool`](@ref)
+
+```@docs
+ThreadPools.logbgforeach
+ThreadPools.logbgmap
+ThreadPools.@logbgthreads
+ThreadPools.logfgforeach
+ThreadPools.logfgmap
+ThreadPools.@logfgthreads
+ThreadPools.readlog
+ThreadPools.showactivity
+ThreadPools.LoggingThreadPool
+```
