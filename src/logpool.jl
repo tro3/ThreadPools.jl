@@ -1,4 +1,6 @@
 
+import Printf: @sprintf
+
 const LogItem = Tuple{Int, Int, Char, Float64} #Jobnum, Thread ID, Start:Stop, Time
 const Job = Tuple{Int, Int, Float64, Float64} #Jobnum, Thread ID, Start Time, Stop Time
 
@@ -86,6 +88,7 @@ function readlog(io::IO)
             push!(get!(result, tid, Job[]), (job, tid, starts[job], t))
         end
     end
+    close(io)
     return result
 end
 
@@ -103,22 +106,16 @@ jobactive(jobs::Vector{Job}, t) = first(filter(j -> active(j,t), jobs))
 _pad(n) = string([" " for i in 1:n]...)
 
 function _formatjob(log, tid, t, width)
-    if iseven(width)
-        half = div(width, 2)
-        none = string(_pad(half), "-", _pad(half-1))
-    else
-        half = div(width-1, 2)
-        none = string(_pad(half), "-", _pad(half))
-    end
+    none = string(_pad(width-2), "- ")
     haskey(log, tid) || return none
     jobs = log[tid]
     count = jobcount(jobs, t)
     count > 0 || return none
     jobstr = string(jobactive(jobs, t)[1])
-    return string(_pad(width-2-length(jobstr)), count > 1 ? "*" : " ", jobstr)
+    return string(_pad(width-2-length(jobstr)), count > 1 ? "*" : " ", jobstr, " ")
 end
 
-function showactivity(log::Dict{Int, Vector{Job}}, dt, t0=0, t1=Inf, nthreads=Inf)
+function showactivity(io, log::Dict{Int, Vector{Job}}, dt, t0=0, t1=Inf, nthreads=Inf)
     maxj = maximum(j[1] for jobs in values(log) for j in jobs)
     width = length(string(maxj)) + 3
 
@@ -129,10 +126,12 @@ function showactivity(log::Dict{Int, Vector{Job}}, dt, t0=0, t1=Inf, nthreads=In
     nonecnt = 0
     nthreads = min(nthreads, Threads.nthreads())
     while t <= t1
-        tstr = round(t; digits=3)
-        println("$tstr $(string([_formatjob(log, tid, t, width) for tid in 1:nthreads]...))")
+        tstr = @sprintf "%0.3f" t
+        println(io, "$tstr $(string([_formatjob(log, tid, t, width) for tid in 1:nthreads]...))")
         t += dt
     end
 end
 
-showactivity(fname::String, dt, t0=0, t1=Inf, nthreads=Inf) = showactivity(readlog(fname), dt, t0, t1, nthreads)
+showactivity(io, fname::String, dt, t0=0, t1=Inf, nthreads=Inf) = showactivity(io, readlog(fname), dt, t0, t1, nthreads)
+showactivity(log::Dict{Int, Vector{Job}}, dt, t0=0, t1=Inf, nthreads=Inf) = showactivity(Base.stdout, log, dt, t0, t1, nthreads)
+showactivity(fname::String, dt, t0=0, t1=Inf, nthreads=Inf) = showactivity(Base.stdout, readlog(fname), dt, t0, t1, nthreads)
