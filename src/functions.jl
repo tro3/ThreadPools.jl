@@ -1,6 +1,4 @@
 
-logerror() = error("Logging ThreadPool invoked with nthreads=1.  Please use single-threaded version")
-
 """
     bgforeach(fn, itrs...) -> Nothing
 
@@ -24,16 +22,6 @@ Note that the execution order across the threads is not guaranteed.
 bgforeach(fn, itr)     = Threads.nthreads() == 1 ? foreach(fn, itr)     : _poolforeach(fn, ThreadPool(), (itr,))
 bgforeach(fn, itrs...) = Threads.nthreads() == 1 ? foreach(fn, itrs...) : _poolforeach(fn, ThreadPool(), itrs)
 
-logbgforeach(fn, io::IO, itr)     = Threads.nthreads() == 1 ? logerror() : _poolforeach(fn, LoggingThreadPool(io), (itr,))
-logbgforeach(fn, io::IO, itrs...) = Threads.nthreads() == 1 ? logerror() : _poolforeach(fn, LoggingThreadPool(io), itrs)
-
-function logbgforeach(fn, fname::String, itrs)
-    io = open(fname, "w")
-    r = logbgforeach(fn, io, itrs)
-    close(io)
-    return r
-end
-
 
 """
     fgforeach(fn, itrs...) -> Nothing
@@ -56,16 +44,6 @@ Note that the primary thread was used to process indexes 2 and 5, in this case.
 """
 fgforeach(fn, itr)     = Threads.nthreads() == 1 ? foreach(fn, itr)     : _poolforeach(fn, ThreadPool(true), (itr,))
 fgforeach(fn, itrs...) = Threads.nthreads() == 1 ? foreach(fn, itrs...) : _poolforeach(fn, ThreadPool(true), itrs)
-
-logfgforeach(fn, io::IO, itr)     = Threads.nthreads() == 1 ? logerror() : _poolforeach(fn, LoggingThreadPool(io, true), (itr,))
-logfgforeach(fn, io::IO, itrs...) = Threads.nthreads() == 1 ? logerror() : _poolforeach(fn, LoggingThreadPool(io, true), itrs)
-
-function logfgforeach(fn, fname::String, itrs)
-    io = open(fname, "w")
-    r = logfgforeach(fn, io, itrs)
-    close(io)
-    return r
-end
 
 function _poolforeach(fn, pool, itrs)
     @async begin
@@ -109,16 +87,6 @@ result will maintain the proper sequence.
 bgmap(fn, itr)::Vector{_detect_type(fn, itr)}      = Threads.nthreads() == 1 ? map(fn, itr)     : _poolmap(fn, ThreadPool(), (itr,))
 bgmap(fn, itrs...)::Vector{_detect_type(fn, itrs)} = Threads.nthreads() == 1 ? map(fn, itrs...) : _poolmap(fn, ThreadPool(), itrs)
 
-logbgmap(fn, io::IO, itr)::Vector{_detect_type(fn, itr)}      = Threads.nthreads() == 1 ? logerror() : _poolmap(fn, LoggingThreadPool(io), (itr,))
-logbgmap(fn, io::IO, itrs...)::Vector{_detect_type(fn, itrs)} = Threads.nthreads() == 1 ? logerror() : _poolmap(fn, LoggingThreadPool(io), itrs)
-
-function logbgmap(fn, fname::String, itrs)
-    io = open(fname, "w")
-    r = logbgmap(fn, io, itrs)
-    close(io)
-    return r
-end
-
 
 """
     fgmap(fn, itrs...) -> collection
@@ -150,16 +118,6 @@ Note that the primary thread was used to process index 2, in this case.
 """
 fgmap(fn, itr)::Vector{_detect_type(fn, itr)}      = Threads.nthreads() == 1 ? map(fn, itr)     : _poolmap(fn, ThreadPool(true), (itr,))
 fgmap(fn, itrs...)::Vector{_detect_type(fn, itrs)} = Threads.nthreads() == 1 ? map(fn, itrs...) : _poolmap(fn, ThreadPool(true), itrs)
-
-logfgmap(fn, io::IO, itr)::Vector{_detect_type(fn, itr)}      = Threads.nthreads() == 1 ? logerror() : _poolmap(fn, LoggingThreadPool(io, true), (itr,))
-logfgmap(fn, io::IO, itrs...)::Vector{_detect_type(fn, itrs)} = Threads.nthreads() == 1 ? logerror() : _poolmap(fn, LoggingThreadPool(io, true), itrs)
-
-function logfgmap(fn, fname::String, itrs)
-    io = open(fname, "w")
-    r = logfgmap(fn, io, itrs)
-    close(io)
-    return r
-end
 
 _detect_type(fn, itr) = eltype(map(fn, empty(itr)))
 _detect_type(fn, itrs::Tuple) = eltype(map(fn, [empty(x) for x in itrs]...))

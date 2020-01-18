@@ -41,6 +41,9 @@ function _default_handler(pool::ThreadPool)
     end
 end
 
+function finalize(pool::ThreadPool)
+    close(pool)
+end
 
 """
     Base.put!(pool::ThreadPool, t::Task)
@@ -122,9 +125,31 @@ struct ResultIterator
 end
 
 """
-    ThreadPools.results(pool::ThreadPool) -> result iterator
+    results(pool::ThreadPool) -> result iterator
 
 Returns an iterator over the `fetch`ed results of the pooled tasks.
+
+# Example
+
+```julia
+julia> pool = ThreadPool();
+
+julia> @async begin
+         for i in 1:4
+           put!(pool, x -> 2*x, i)
+         end
+         close(pool)
+       end;
+
+julia> for r in results(pool)
+         println(r)
+       end
+6
+2
+4
+8
+```
+Note that the execution order across the threads is not guaranteed.
 """
 results(pool::ThreadPool) = ResultIterator(pool)
 
