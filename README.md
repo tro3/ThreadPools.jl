@@ -3,10 +3,10 @@
 _Improved thread management for background and nonuniform tasks_
 
 A simple package that creates a few functions mimicked from `Base`
-([`bgforeach`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPool.bgforeach-Tuple{Any,Any}), 
-[`bgmap`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPool.bgmap-Tuple{Any,Any}),
+([`bgforeach`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.bgforeach-Tuple{Any,Any}), 
+[`bgmap`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.bgmap-Tuple{Any,Any}),
 and
-[`@bgthreads`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPool.@bgthreads))
+[`@bgthreads`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.@bgthreads))
 that behave like the originals but generate spawned tasks 
 that stay purely on background threads.  For better throughput for more
 uniform tasks, primary thread versions are also provided, and logging 
@@ -30,19 +30,19 @@ ThreadPool is a simple package that allows background-only Task assignment for
 cases where this makes sense.  As Julia matures, it is hoped this package is 
 made obsolete.  The standard `foreach`,  `map`, and `@threads` functions are 
 mimicked, adding a `bg` prefix to each to denote background operation: 
-[`bgforeach`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPool.bgforeach-Tuple{Any,Any}), 
-[`bgmap`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPool.bgmap-Tuple{Any,Any}),
+[`bgforeach`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.bgforeach-Tuple{Any,Any}), 
+[`bgmap`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.bgmap-Tuple{Any,Any}),
 and
-[`@bgthreads`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPool.@bgthreads).
+[`@bgthreads`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.@bgthreads).
 Code that runs with one of those Base functions will run the same with the 
 `bg` prepended, but adding multithreading for free in the `foreach` and `map` 
 cases, and in all cases keeping the primary thread free of blocking Tasks.
 
 Foreground versions, 
-[`fgforeach`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPool.fgforeach-Tuple{Any,Any}), 
-[`fgmap`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPool.fgmap-Tuple{Any,Any}),
+[`fgforeach`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.fgforeach-Tuple{Any,Any}), 
+[`fgmap`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.fgmap-Tuple{Any,Any}),
 and
-[`@fgthreads`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPool.@fgthreads)
+[`@fgthreads`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.@fgthreads)
 are also included for cases where the work tasks are a little more uniform, so
 that the primary thread impact does not reduce throughput.  Finally, there are
 logging versions of each of the above commands
