@@ -20,19 +20,16 @@ mutable struct ThreadPool
     cnt  :: Threads.Atomic{Int}
 
     ThreadPool(allow_primary=false, handler=_default_handler) = begin
-        allow_primary = allow_primary || Threads.threadid() == 1
+        allow_primary = allow_primary || Threads.nthreads() == 1
         N = Threads.nthreads() - (allow_primary ? 0 : 1)
         pool = new(Channel{Task}(N), Channel{Task}(N), Threads.Atomic{Int}(0))
         Threads.@threads for i in 1:Threads.nthreads()
             if allow_primary || Threads.threadid() > 1
                 @async handler(pool)
-                println("finished async")
             end
         end
-        println("finished setup")
         return pool
     end
-
 end
 
 function _default_handler(pool::ThreadPool)

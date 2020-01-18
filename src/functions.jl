@@ -18,8 +18,10 @@ julia> bgforeach([1,2,3]) do x
 ```
 Note that the execution order across the threads is not guaranteed.
 """
-bgforeach(fn, itr)     = _poolforeach(fn, false, (itr,))
-bgforeach(fn, itrs...) = _poolforeach(fn, false, itrs)
+bgforeach(fn, itr)     = _poolforeach(fn, ThreadPool(), (itr,))
+bgforeach(fn, itrs...) = _poolforeach(fn, ThreadPool(), itrs)
+logbgforeach(fn, io, itr)     = _poolforeach(fn, LoggingThreadPool(io), (itr,))
+logbgforeach(fn, io, itrs...) = _poolforeach(fn, LoggingThreadPool(io), itrs)
 
 
 """
@@ -41,14 +43,13 @@ julia> fgforeach([1,2,3,4,5]) do x
 ```
 Note that the primary thread was used to process indexes 2 and 5, in this case.
 """
-fgforeach(fn, itr)     = _poolforeach(fn, true, (itr,))
-fgforeach(fn, itrs...) = _poolforeach(fn, true, itrs)
+fgforeach(fn, itr)     = _poolforeach(fn, ThreadPool(true), (itr,))
+fgforeach(fn, itrs...) = _poolforeach(fn, ThreadPool(true), itrs)
 
-function _poolforeach(fn, allow_primary, itrs)
+function _poolforeach(fn, pool, itrs)
     if Threads.nthreads() == 1
         return foreach(fn, itrs...)
     else
-        pool = ThreadPool(allow_primary)
         @async begin
             for item in zip(itrs...)
                 put!(pool, fn, item...)
