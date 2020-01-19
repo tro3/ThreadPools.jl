@@ -48,7 +48,7 @@ that the primary thread impact does not reduce throughput.  Finally, there are
 logging versions of each of the above commands
 [`logbgforeach`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.logbgforeach), 
 [`logbgmap`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.logbgmap), 
-, etc, as well as some analysis utilities to help in tuning performance.
+etc, as well as some analysis utilities to help in tuning performance.
 
 
 ## Usage
@@ -94,7 +94,7 @@ that will cause a new file to be created and used by the log.  The
 [`readlog`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.readlog)
 and 
 [`showactivity`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.showactivity)
-functions help visualize the activity:
+functions help visualize the activity (here, a 4-thread system using the primary with `fgforeach`):
 
 ```julia
 julia> ThreadPools.logfgforeach(x -> sleep(0.1*x), "log.txt", 1:8)

@@ -81,7 +81,8 @@ For an example of a more complex load-management scenario, see
 
 The logging versions of the functions take in an IO as the log, or and string
 that will cause a new file to be created and used by the log.  The `readlog`
-and `showactivity` functions help visualize the activity:
+and `showactivity` functions help visualize the activity  (here, a 4-thread 
+system using the primary with `fgforeach`):
 
 ```julia
 julia> ThreadPools.logfgforeach(x -> sleep(0.1*x), "log.txt", 1:8)
