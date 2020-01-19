@@ -84,11 +84,9 @@ that will cause a new file to be created and used by the log.  The `readlog`
 and `showactivity` functions help visualize the activity:
 
 ```julia
-julia> io = IOBuffer();
+julia> ThreadPools.logfgforeach(x -> sleep(0.1*x), "log.txt", 1:8)
 
-julia> ThreadPools.logfgforeach(x -> sleep(0.1*x), io, 1:8)
-
-julia> log = ThreadPools.readlog(IOBuffer(String(take!(io))))
+julia> log = ThreadPools.readlog("log.txt")
 Dict{Int64,Array{Tuple{Int64,Int64,Float64,Float64},1}} with 4 entries:
   4 => Tuple{Int64,Int64,Float64,Float64}[(2, 4, 0.016, 0.228), (6, 4, 0.228, 0.842)]
   2 => Tuple{Int64,Int64,Float64,Float64}[(1, 2, 0.016, 0.127), (5, 2, 0.127, 0.639)]
