@@ -100,24 +100,24 @@ functions help visualize the activity:
 julia> ThreadPools.logfgforeach(x -> sleep(0.1*x), "log.txt", 1:8)
 
 julia> log = ThreadPools.readlog("log.txt")
-Dict{Int64,Array{Tuple{Int64,Int64,Float64,Float64},1}} with 4 entries:
-  4 => Tuple{Int64,Int64,Float64,Float64}[(2, 4, 0.016, 0.228), (6, 4, 0.228, 0.842)]
-  2 => Tuple{Int64,Int64,Float64,Float64}[(1, 2, 0.016, 0.127), (5, 2, 0.127, 0.639)]
-  3 => Tuple{Int64,Int64,Float64,Float64}[(3, 3, 0.016, 0.342), (7, 3, 0.342, 1.043)]
-  1 => Tuple{Int64,Int64,Float64,Float64}[(4, 1, 0.016, 0.435), (8, 1, 0.435, 1.246)]
+Dict{Int64,Array{ThreadPools.Job,1}} with 4 entries:
+  4 => ThreadPools.Job[Job(3, 4, 0.0149999, 0.343), Job(7, 4, 0.343, 1.045)]
+  2 => ThreadPools.Job[Job(2, 2, 0.0149999, 0.249), Job(6, 2, 0.249, 0.851)]
+  3 => ThreadPools.Job[Job(1, 3, 0.0149999, 0.14), Job(5, 3, 0.14, 0.641)]
+  1 => ThreadPools.Job[Job(4, 1, 0.0149999, 0.44), Job(8, 1, 0.44, 1.241)]
 
 julia> ThreadPools.showactivity(log, 0.1)
 0.000   -   -   -   -
-0.100   4   1   3   2
-0.200   4   5   3   2
-0.300   4   5   3   6
-0.400   4   5   7   6
-0.500   8   5   7   6
-0.600   8   5   7   6
-0.700   8   -   7   6
-0.800   8   -   7   6
-0.900   8   -   7   -
-1.000   8   -   7   -
+0.100   4   2   1   3
+0.200   4   2   5   3
+0.300   4   6   5   3
+0.400   4   6   5   7
+0.500   8   6   5   7
+0.600   8   6   5   7
+0.700   8   6   -   7
+0.800   8   6   -   7
+0.900   8   -   -   7
+1.000   8   -   -   7
 1.100   8   -   -   -
 1.200   8   -   -   -
 1.300   -   -   -   -

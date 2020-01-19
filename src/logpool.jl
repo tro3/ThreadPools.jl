@@ -2,7 +2,14 @@
 import Printf: @sprintf
 
 const LogItem = Tuple{Int, Int, Char, Float64} #Jobnum, Thread ID, Start:Stop, Time
-const Job = Tuple{Int, Int, Float64, Float64} #Jobnum, Thread ID, Start Time, Stop Time
+
+struct Job
+    id    :: Int
+    tid   :: Int
+    start :: Float64
+    stop  :: Float64
+end
+
 
 """
     ThreadPools.LoggingThreadPool(io, allow_primary=false)
@@ -69,9 +76,14 @@ end
 Analyzes the output of a [`LoggingThreadPool`](@ref) and produces the history
 of each job on each thread.  
 
-Each job in the job list is a tuple of:
+Each job in the job list is a struct of:
 ```
-(Job # :: Int, Thread # :: Int, Start Time :: Float64, Stop Time :: Float64)
+struct Job
+    id    :: Int
+    tid   :: Int
+    start :: Float64
+    stop  :: Float64
+end
 ```
 The default sorting order of the jobs in each thread are by stop time.  `io`
 can either be an IO object or a filename. 
@@ -79,12 +91,11 @@ can either be an IO object or a filename.
 # Example
 ```julia
 julia> log = ThreadPools.readlog("mylog.txt")
-Dict{Int64,Array{Tuple{Int64,Int64,Float64,Float64},1}} with 3 entries:
-  4 => Tuple{Int64,Int64,Float64,Float64}[(1, 4, 0.016, 0.132), (4, 4, 0.132, 0.538)]
-  2 => Tuple{Int64,Int64,Float64,Float64}[(2, 2, 0.016, 0.232), (5, 2, 0.232, 0.739)]
-  3 => Tuple{Int64,Int64,Float64,Float64}[(3, 3, 0.016, 0.333), (6, 3, 0.333, 0.94)]
+Dict{Int64,Array{ThreadPools.Job,1}} with 3 entries:
+  4 => ThreadPools.Job[Job(3, 4, 0.016, 0.327), Job(6, 4, 0.327, 0.928)]
+  2 => ThreadPools.Job[Job(2, 2, 0.016, 0.233), Job(5, 2, 0.233, 0.749)]
+  3 => ThreadPools.Job[Job(1, 3, 0.016, 0.139), Job(4, 3, 0.139, 0.546)]
 ```
-
 """
 function readlog(io::IO)
     result = Dict{Int, Vector{Job}}()
@@ -107,7 +118,7 @@ function readlog(io::IO)
             starts[job] = t
         else
             haskey(starts, job) || error("Stop encountered before start: line $i, job $job")
-            push!(get!(result, tid, Job[]), (job, tid, starts[job], t))
+            push!(get!(result, tid, Job[]), Job(job, tid, starts[job], t))
         end
     end
     close(io)
@@ -117,10 +128,10 @@ end
 readlog(fname::String) = readlog(open(fname))
 
 
-duration(job::Job) = job[4] - job[3]
-active(job::Job, t) = t >= job[3] && t < job[4]
+duration(job::Job) = job.stop - job.start
+active(job::Job, t) = t >= job.start && t < job.stop
 
-duration(jobs::Vector{Job}) = maximum(j[4] for j in jobs) - minimum(j[3] for j in jobs) # Nonoptimized
+duration(jobs::Vector{Job}) = maximum(j.stop for j in jobs) - minimum(j.start for j in jobs) # Nonoptimized
 jobcount(jobs::Vector{Job}, t) = length(filter(j -> active(j,t), jobs))
 jobactive(jobs::Vector{Job}, t) = first(filter(j -> active(j,t), jobs))
 
@@ -133,7 +144,7 @@ function _formatjob(log, tid, t, width)
     jobs = log[tid]
     count = jobcount(jobs, t)
     count > 0 || return none
-    jobstr = string(jobactive(jobs, t)[1])
+    jobstr = string(jobactive(jobs, t).id)
     return string(_pad(width-2-length(jobstr)), count > 1 ? "*" : " ", jobstr, " ")
 end
 
@@ -148,23 +159,23 @@ The format of the output is
 ```julia
 julia> ThreadPools.showactivity("mylog.txt", 0.1)
 0.000   -   -   -   -
-0.100   4   1   3   2
-0.200   4   5   3   2
-0.300   4   5   3   6
-0.400   4   5   7   6
-0.500   8   5   7   6
-0.600   8   5   7   6
-0.700   8   -   7   6
-0.800   8   -   7   6
-0.900   8   -   7   -
-1.000   8   -   7   -
+0.100   4   2   1   3
+0.200   4   2   5   3
+0.300   4   6   5   3
+0.400   4   6   5   7
+0.500   8   6   5   7
+0.600   8   6   5   7
+0.700   8   6   -   7
+0.800   8   6   -   7
+0.900   8   -   -   7
+1.000   8   -   -   7
 1.100   8   -   -   -
 1.200   8   -   -   -
 1.300   -   -   -   -
 1.400   -   -   -   -
 ```
 where the first column is time, and each column afterwards is the active job
-number in each thread (threads 1:nthreads, left to right) at that point in
+id in each thread (threads 1:nthreads, left to right) at that point in
 time.
 
 If `io` is provided, the output will be written there.  `log` may be a log IO 
@@ -173,7 +184,7 @@ for each row, `t0` is the optional starting time, `t1` the optional stopping
 time, and `nthreads` is the number of threads to print.
 """
 function showactivity(io, log::Dict{Int, Vector{Job}}, dt, t0=0, t1=Inf; nthreads=0)
-    maxj = maximum(j[1] for jobs in values(log) for j in jobs)
+    maxj = maximum(j.id for jobs in values(log) for j in jobs)
     width = length(string(maxj)) + 3
 
     maxt = maximum(duration(x) for x in values(log))
