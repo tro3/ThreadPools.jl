@@ -3,59 +3,70 @@
 
 _Improved thread management for background and nonuniform tasks_
 
-A simple package that creates a few functions mimicked from `Base`
-([`bgforeach`](@ref), [`bgmap`](@ref), and [`@bgthreads`](@ref))
-that behave like the originals but generate spawned tasks 
-that stay purely on background threads.  For better throughput with more
-uniform tasks, [`fgforeach`](@ref), [`fgmap`](@ref), and 
-[`@fgthreads`](@ref) are also provided, and logging versions of all of the 
-above and the `Base.Threads.@threads` macro are included for tuning purposes.
+A simple package that exposes a couple of macros that mimic 
+`Base.Threads.@threads`:
+[`@fgthreads`](@ref)
+and
+[`@bgthreads`](@ref).  
+Both macros use active thread management to keep all threads busy, even when 
+processing tasks with varying durations.  The `@fgthreads` uses all available 
+threads, while `@bgthreads` version keeps the tasks in the background.  There
+are also version of the `Base.map` and `Base.foreach` functions that behave 
+similarly:
+[`fgmap`](@ref),
+[`bgmap`](@ref),
+[`fgforeach`](@ref), 
+and
+[`bgforeach`](@ref), 
+as well as logging versions of all of the above and the original
+`@threads` macro for tuning purposes.
 
 ## Overview
 
-As of v1.3.1, Julia does not have any built-in mechanisms for keeping 
-computational threads off of the primary thread.  For many use cases, this 
-restriction is not important - usually, pure computational activities will 
-run faster using all threads.  But in some cases, we may want to keep the 
-primary thread free of blocking tasks.  For example, a GUI running on the 
-primary thread will become unresponsive if a computational task hits.  For 
-another, parallel computations with very nonuniform processing times can 
-benefit from sacrificing the primary thread to manage the loads on the 
-remaining ones.
+As of Julia 1.3, the algorithm of the `@threads` macro is to pre-divide the 
+incoming range into equal partitions running on each thread.  This is very 
+efficient for most use cases, but there are a couple of scenarios where
+this can present a problem:
 
-ThreadPools is a simple package that allows background-only Task assignment for 
-cases where this makes sense.  The standard `foreach`,  `map`, and `@threads` 
-functions are mimicked, adding a `bg` prefix to each to denote background 
-operation: [`bgforeach`](@ref), [`bgmap`](@ref), and [`@bgthreads`](@ref).  
-Code that runs with one of  those Base functions should run just fine with the 
-`bg` prepended, but adding multithreading for free in the `foreach` and `map` 
-cases, and in all cases keeping the primary thread free of blocking Tasks.
+* When something else is running on the primary thread, like a GUI or a web 
+  server
+* When the tasks are very nonuniform, possibly leading to one thread working
+  on the longer tasks while the others sit idle
 
-When the user would still like to include the primary thread, `fg` versions of
-the above functions are provided: [`fgforeach`](@ref), [`fgmap`](@ref), 
-and [`@fgthreads`](@ref).  These can provide a little more throughput, though
-there will be occasional interruption of the thread management by the spawned
-tasks.  Finally, all of the above have a logged counterpart: 
-[`ThreadPools.logbgforeach`](@ref), [`ThreadPools.logbgmap`](@ref), 
-[`ThreadPools.@logbgthreads`](@ref), [`ThreadPools.logfgforeach`](@ref), 
-[`ThreadPools.logfgmap`](@ref), and [`ThreadPools.@logfgthreads`](@ref).
+ThreadPools is a simple package that exposes foreground and background variants
+of `@threads`, `map`, and `foreach` that actively manage the threads, starting 
+a new task when the previous one completes and in the case of the background 
+versions, keeping them off the primary thread.  The foreground versions are
+prepended with `fg` and background with `bg`, leading to:
 
+* [`@fgthreads`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.@fgthreads)
+* [`@bgthreads`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.@bgthreads)
+* [`fgmap`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.fgmap-Tuple{Any,Any})
+* [`bgmap`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.bgmap-Tuple{Any,Any})
+* [`fgforeach`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.fgforeach-Tuple{Any,Any})
+* [`bgforeach`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.bgforeach-Tuple{Any,Any})
+
+There are also versions of the above functions that will produce a task log to 
+help tune performance.  These are prepended with a `log` (for example,
+[`logbgmap`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.logbgmap)
+).  There are also a logging version of `Base.Threads.@threads` to compare with 
+and some analysis utilities included.
 
 ## Usage
 
 Each of the simple API functions can be used like the `Base` versions of the 
-same function, with a `bg` prepended to the function: 
+same function: 
 
 ```julia
-julia> bgforeach([1,2,3]) do x
-         println("\$(x+1) \$(Threads.threadid())")
+julia> @bgthreads for x in 1:3
+         println("$x $(Threads.threadid())")
        end
-3 3
-4 4
-2 2
+2 3
+3 4
+1 2
 
 julia> bgmap([1,2,3]) do x
-         println("\$x \$(Threads.threadid())")
+         println("$x $(Threads.threadid())")
          x^2
        end
 2 3
@@ -65,24 +76,19 @@ julia> bgmap([1,2,3]) do x
  1
  4
  9
-
-julia> @bgthreads for x in 1:3
-         println("\$x \$(Threads.threadid())")
-       end
-2 3
-3 4
-1 2
 ```
-For an example of a more complex load-management scenario, see 
-`examples/stackdemo.jl`.
+Note that while the execution order is not guaranteed across threads, but the 
+result of `bgmap` will of course match the input. For an example 
+of a more complex load-management scenario, see `examples/stackdemo.jl`.
 
 
 ## Logger Usage
 
-The logging versions of the functions take in an IO as the log, or and string
-that will cause a new file to be created and used by the log.  The `readlog`
-and `showactivity` functions help visualize the activity  (here, a 4-thread 
-system using the primary with `fgforeach`):
+The logging versions of the functions take either an IO for the log or a 
+filename to be created and used as the log.  The `readlog`, 
+`showstats`, and `showactivity` functions help visualize 
+the activity  (here, a 4-thread system using the primary with 
+`fgforeach`:
 
 ```julia
 julia> ThreadPools.logfgforeach(x -> sleep(0.1*x), "log.txt", 1:8)
