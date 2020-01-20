@@ -1,5 +1,6 @@
 
 import Printf: @sprintf
+using Statistics
 
 const LogItem = Tuple{Int, Int, Char, Float64} #Jobnum, Thread ID, Start:Stop, Time
 
@@ -134,6 +135,7 @@ active(job::Job, t) = t >= job.start && t < job.stop
 duration(jobs::Vector{Job}) = maximum(j.stop for j in jobs) - minimum(j.start for j in jobs) # Nonoptimized
 jobcount(jobs::Vector{Job}, t) = length(filter(j -> active(j,t), jobs))
 jobactive(jobs::Vector{Job}, t) = first(filter(j -> active(j,t), jobs))
+gaptime(jobs::Vector{Job}) = sum(y.start - x.stop for (x,y) in zip(jobs[1:end-1], jobs[2:end]))
 
 
 _pad(n) = string([" " for i in 1:n]...)
@@ -203,3 +205,49 @@ end
 showactivity(io, fname::String, dt, t0=0, t1=Inf; nthreads=0) = showactivity(io, readlog(fname), dt, t0, t1; nthreads=nthreads)
 showactivity(log::Dict{Int, Vector{Job}}, dt, t0=0, t1=Inf; nthreads=0) = showactivity(Base.stdout, log, dt, t0, t1; nthreads=nthreads)
 showactivity(fname::String, dt, t0=0, t1=Inf; nthreads=0) = showactivity(Base.stdout, readlog(fname), dt, t0, t1; nthreads=nthreads)
+
+
+"""
+    ThreadPools.showstats([io, ]log)
+
+Produces a statistical analysis of the provided log.
+
+# Example
+```julia
+julia> ThreadPools.showstats("mylog.txt")
+
+    Total duration: 1.542 s
+    Number of jobs: 8
+    Average job duration: 0.462 s
+    Minimum job duration: 0.111 s
+    Maximum job duration: 0.82 s
+
+    Thread 2: Duration 1.542 s, Gap time 0.0 s
+    Thread 3: Duration 1.23 s, Gap time 0.0 s
+    Thread 4: Duration 0.925 s, Gap time 0.0 s
+
+```
+"""
+function showstats(io, log::Dict{Int, Vector{Job}})
+    flat = collect(Iterators.flatten(jobs for jobs in values(log)))
+    totduration = duration(flat)
+    durations = [duration(job) for job in flat]
+    print(io, """
+
+    Total duration: $(round(totduration; digits=3)) s
+    Number of jobs: $(length(flat))
+    Average job duration: $(round(mean(durations); digits=3)) s
+    Minimum job duration: $(round(minimum(durations); digits=3)) s
+    Maximum job duration: $(round(maximum(durations); digits=3)) s
+
+""")
+    for thrd in sort!(collect(keys(log)))
+        dur = round(duration(log[thrd]); digits=3)
+        gap = round(gaptime(log[thrd]); digits=3)
+        println(io, "    Thread $thrd: Duration $dur s, Gap time $gap s")
+    end
+end
+
+showstats(io, fname::String) = showstats(io, readlog(fname))
+showstats(log::Dict{Int, Vector{Job}}) = showstats(Base.stdout, log)
+showstats(fname::String) = showstats(Base.stdout, readlog(fname))

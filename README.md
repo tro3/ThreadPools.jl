@@ -9,8 +9,9 @@ and
 [`@bgthreads`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.@bgthreads))
 that behave like the originals but generate spawned tasks 
 that stay purely on background threads.  For better throughput for more
-uniform tasks, primary thread versions are also provided, and logging 
-versions of all of the above are included for tuning purposes.
+uniform tasks, primary thread versions are also provided, and logging versions 
+of all of the above and the `Base.Threads.@threads` macro are included for 
+tuning purposes.
 
 Documentation at https://tro3.github.io/ThreadPools.jl
 
@@ -27,9 +28,9 @@ benefit from sacrificing the primary thread to manage the loads on the
 remaining ones.
 
 ThreadPool is a simple package that allows background-only Task assignment for 
-cases where this makes sense.  As Julia matures, it is hoped this package is 
-made obsolete.  The standard `foreach`,  `map`, and `@threads` functions are 
-mimicked, adding a `bg` prefix to each to denote background operation: 
+cases where this makes sense.  The standard `foreach`,  `map`, and `@threads` 
+functions are mimicked, adding a `bg` prefix to each to denote background 
+operation: 
 [`bgforeach`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.bgforeach-Tuple{Any,Any}), 
 [`bgmap`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.bgmap-Tuple{Any,Any}),
 and
@@ -48,7 +49,8 @@ that the primary thread impact does not reduce throughput.  Finally, there are
 logging versions of each of the above commands
 [`logbgforeach`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.logbgforeach), 
 [`logbgmap`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.logbgmap), 
-etc, as well as some analysis utilities to help in tuning performance.
+etc, as well as a logging verison of `Base.Threads.@threads` and some analysis utilities 
+to help in tuning performance.  
 
 
 ## Usage
@@ -101,10 +103,23 @@ julia> ThreadPools.logfgforeach(x -> sleep(0.1*x), "log.txt", 1:8)
 
 julia> log = ThreadPools.readlog("log.txt")
 Dict{Int64,Array{ThreadPools.Job,1}} with 4 entries:
-  4 => ThreadPools.Job[Job(3, 4, 0.0149999, 0.343), Job(7, 4, 0.343, 1.045)]
-  2 => ThreadPools.Job[Job(2, 2, 0.0149999, 0.249), Job(6, 2, 0.249, 0.851)]
-  3 => ThreadPools.Job[Job(1, 3, 0.0149999, 0.14), Job(5, 3, 0.14, 0.641)]
-  1 => ThreadPools.Job[Job(4, 1, 0.0149999, 0.44), Job(8, 1, 0.44, 1.241)]
+  4 => ThreadPools.Job[Job(3, 4, 0.016, 0.328), Job(7, 4, 0.328, 1.039)]
+  2 => ThreadPools.Job[Job(2, 2, 0.016, 0.228), Job(6, 2, 0.228, 0.843)]
+  3 => ThreadPools.Job[Job(1, 3, 0.016, 0.128), Job(5, 3, 0.128, 0.629)]
+  1 => ThreadPools.Job[Job(4, 1, 0.016, 0.428), Job(8, 1, 0.428, 1.233)]
+
+julia> ThreadPools.showstats(log)
+
+    Total duration: 1.217 s
+    Number of jobs: 8
+    Average job duration: 0.46 s
+    Minimum job duration: 0.112 s
+    Maximum job duration: 0.805 s
+
+    Thread 1: Duration 1.217 s, Gap time 0.0 s
+    Thread 2: Duration 0.827 s, Gap time 0.0 s
+    Thread 3: Duration 0.613 s, Gap time 0.0 s
+    Thread 4: Duration 1.023 s, Gap time 0.0 s
 
 julia> ThreadPools.showactivity(log, 0.1)
 0.000   -   -   -   -

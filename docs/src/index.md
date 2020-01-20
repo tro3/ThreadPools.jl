@@ -8,20 +8,20 @@ A simple package that creates a few functions mimicked from `Base`
 that behave like the originals but generate spawned tasks 
 that stay purely on background threads.  For better throughput with more
 uniform tasks, [`fgforeach`](@ref), [`fgmap`](@ref), and 
-[`@fgthreads`](@ref) are also provided, and logging versions of all
-of the above are included for tuning purposes.
+[`@fgthreads`](@ref) are also provided, and logging versions of all of the 
+above and the `Base.Threads.@threads` macro are included for tuning purposes.
 
 ## Overview
 
 As of v1.3.1, Julia does not have any built-in mechanisms for keeping 
 computational threads off of the primary thread.  For many use cases, this 
-restriction is not important - except in very specific instances, pure 
-computational activities will run faster using all threads.  But in some cases, 
-we may want to keep the primary thread free of blocking tasks.  For example, a 
-GUI running on the primary thread will become unresponsive if a computational 
-task hits.  As another example, parallel computations with very nonuniform 
-processing times can benefit from sacrificing the primary thread to manage the 
-loads on the remaining ones.
+restriction is not important - usually, pure computational activities will 
+run faster using all threads.  But in some cases, we may want to keep the 
+primary thread free of blocking tasks.  For example, a GUI running on the 
+primary thread will become unresponsive if a computational task hits.  For 
+another, parallel computations with very nonuniform processing times can 
+benefit from sacrificing the primary thread to manage the loads on the 
+remaining ones.
 
 ThreadPools is a simple package that allows background-only Task assignment for 
 cases where this makes sense.  The standard `foreach`,  `map`, and `@threads` 
@@ -89,10 +89,23 @@ julia> ThreadPools.logfgforeach(x -> sleep(0.1*x), "log.txt", 1:8)
 
 julia> log = ThreadPools.readlog("log.txt")
 Dict{Int64,Array{ThreadPools.Job,1}} with 4 entries:
-  4 => ThreadPools.Job[Job(3, 4, 0.0149999, 0.343), Job(7, 4, 0.343, 1.045)]
-  2 => ThreadPools.Job[Job(2, 2, 0.0149999, 0.249), Job(6, 2, 0.249, 0.851)]
-  3 => ThreadPools.Job[Job(1, 3, 0.0149999, 0.14), Job(5, 3, 0.14, 0.641)]
-  1 => ThreadPools.Job[Job(4, 1, 0.0149999, 0.44), Job(8, 1, 0.44, 1.241)]
+  4 => ThreadPools.Job[Job(3, 4, 0.016, 0.328), Job(7, 4, 0.328, 1.039)]
+  2 => ThreadPools.Job[Job(2, 2, 0.016, 0.228), Job(6, 2, 0.228, 0.843)]
+  3 => ThreadPools.Job[Job(1, 3, 0.016, 0.128), Job(5, 3, 0.128, 0.629)]
+  1 => ThreadPools.Job[Job(4, 1, 0.016, 0.428), Job(8, 1, 0.428, 1.233)]
+
+julia> ThreadPools.showstats(log)
+
+    Total duration: 1.217 s
+    Number of jobs: 8
+    Average job duration: 0.46 s
+    Minimum job duration: 0.112 s
+    Maximum job duration: 0.805 s
+
+    Thread 1: Duration 1.217 s, Gap time 0.0 s
+    Thread 2: Duration 0.827 s, Gap time 0.0 s
+    Thread 3: Duration 0.613 s, Gap time 0.0 s
+    Thread 4: Duration 1.023 s, Gap time 0.0 s
 
 julia> ThreadPools.showactivity(log, 0.1)
 0.000   -   -   -   -
@@ -218,7 +231,9 @@ purpose.
 * [`ThreadPools.logfgforeach`](@ref)
 * [`ThreadPools.logfgmap`](@ref)
 * [`ThreadPools.@logfgthreads`](@ref)
+* [`ThreadPools.@logthreads`](@ref)
 * [`ThreadPools.readlog`](@ref)
+* [`ThreadPools.showstats`](@ref)
 * [`ThreadPools.showactivity`](@ref)
 * [`ThreadPools.LoggingThreadPool`](@ref)
 
@@ -229,7 +244,9 @@ ThreadPools.@logbgthreads
 ThreadPools.logfgforeach
 ThreadPools.logfgmap
 ThreadPools.@logfgthreads
+ThreadPools.@logthreads io
 ThreadPools.readlog
+ThreadPools.showstats
 ThreadPools.showactivity
 ThreadPools.LoggingThreadPool
 ```

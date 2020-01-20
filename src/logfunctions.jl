@@ -7,7 +7,7 @@ logerror() = throw(SystemError("Logging ThreadPool invoked with nthreads=1.  Ple
 
 Mimics [`bgforeach`](@ref), but with a log that can be analyzed with 
 [`readlog`](@ref).  If `io` is a string, a file will be opened with
-that name and used as the log.  At the end of the loop `io` is closed.
+that name and used as the log.
 
 !! note
     This function cannot be used with Threads.nthreads() == 1, and will
@@ -30,7 +30,7 @@ end
 
 Mimics [`fgforeach`](@ref), but with a log that can be analyzed with 
 [`readlog`](@ref).  If `io` is a string, a file will be opened with
-that name and used as the log.  At the end of the loop `io` is closed.
+that name and used as the log.
 
 !! note
     This function cannot be used with Threads.nthreads() == 1, and will
@@ -53,7 +53,7 @@ end
 
 Mimics [`bgmap`](@ref), but with a log that can be analyzed with 
 [`readlog`](@ref).  If `io` is a string, a file will be opened with
-that name and used as the log.  At the end of the loop `io` is closed.
+that name and used as the log.
 
 !! note
     This function cannot be used with Threads.nthreads() == 1, and will
@@ -76,7 +76,7 @@ end
 
 Mimics [`fgmap`](@ref), but with a log that can be analyzed with 
 [`readlog`](@ref).  If `io` is a string, a file will be opened with
-that name and used as the log.  At the end of the loop `io` is closed.
+that name and used as the log.
 
 !! note
     This function cannot be used with Threads.nthreads() == 1, and will
@@ -99,7 +99,7 @@ end
 
 Mimics [`@bgthreads`](@ref), but with a log that can be analyzed with 
 [`readlog`](@ref).  If `io` is a string, a file will be opened with
-that name and used as the log.  At the end of the loop `io` is closed.
+that name and used as the log.
 
 !! note
     This function cannot be used with Threads.nthreads() == 1, and will
@@ -138,7 +138,7 @@ end
 
 Mimics [`@fgthreads`](@ref), but with a log that can be analyzed with 
 [`readlog`](@ref).  If `io` is a string, a file will be opened with
-that name and used as the log.  At the end of the loop `io` is closed.
+that name and used as the log.
 
 !! note
     This function cannot be used with Threads.nthreads() == 1, and will
@@ -168,5 +168,109 @@ macro logfgthreads(io, args...)
         end
     else
         throw(ArgumentError("unrecognized argument to @bgthreads"))
+    end
+end
+
+
+"""
+    ThreadPools.@logthreads io
+
+Mimics 
+[`Base.Threads.@threads`]((https://docs.julialang.org/en/v1/base/multi-threading/#Base.Threads.@threads)),
+but with a log that can be analyzed with [`readlog`](@ref) to help tune 
+performance.  If `io` is a string, a file will be opened with that name and 
+used as the log.
+"""
+macro logthreads(io, args...)
+    na = length(args)
+    if na != 1
+        throw(ArgumentError("wrong number of arguments in @threads"))
+    end
+    ex = args[1]
+    if !isa(ex, Expr)
+        throw(ArgumentError("need an expression argument to @threads"))
+    end
+    if ex.head === :for
+        return _logthreadsfor(io, ex.args[1], ex.args[2])
+    else
+        throw(ArgumentError("unrecognized argument to @threads"))
+    end
+end
+
+function _logthreadsfor(io,iter,lbody)
+    lidx = iter.args[1]         # index
+    range = iter.args[2]
+    quote
+        local threadsfor_fun
+        let range = $(esc(range))
+            function threadsfor_fun(logger, t0, onethread=false)
+                r = range # Load into local variable
+                lenr = length(r)
+                # divide loop iterations among threads
+                if onethread
+                    tid = 1
+                    len, rem = lenr, 0
+                else
+                    tid = Threads.threadid()
+                    len, rem = divrem(lenr, Threads.nthreads())
+                end
+                # not enough iterations for all the threads?
+                if len == 0
+                    if tid > rem
+                        return
+                    end
+                    len, rem = 1, 0
+                end
+                # compute this thread's iterations
+                f = 1 + ((tid-1) * len)
+                l = f + len - 1
+                # distribute remaining iterations evenly
+                if rem > 0
+                    if tid <= rem
+                        f = f + (tid-1)
+                        l = l + tid
+                    else
+                        f = f + rem
+                        l = l + rem
+                    end
+                end
+                # run this thread's iterations
+                for i = f:l
+                    local $(esc(lidx)) = Base.unsafe_getindex(r,i)
+                    put!(logger, (i, tid, 'S', time()-t0))
+                    $(esc(lbody))
+                    tend = time()-t0
+                    put!(logger, (i, tid, 'P', tend))
+                end
+            end
+        end
+
+        closeit = false
+        if $(esc(io)) isa AbstractString
+            fil = open($(esc(io)), "w")
+            closeit = true
+        else
+            fil = $(esc(io))
+        end
+
+        logger = Channel{LogItem}(16*1024) do c
+            for item in c
+                job, tid, st, t = item
+                write(fil, "$job $tid $st $t\n")
+            end
+        end
+
+        t0 = time()
+        if Threads.threadid() != 1
+            # only thread 1 can enter/exit _threadedregion
+            Base.invokelatest(threadsfor_fun, logger, t0, true)
+        else
+            ccall(:jl_threading_run, Cvoid, (Any,), () -> threadsfor_fun(logger, t0))
+        end
+
+        close(logger)
+        closeit && close(fil)
+
+        nothing
     end
 end

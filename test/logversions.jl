@@ -31,6 +31,23 @@ include("util.jl")
 """
 end
 
+@testset "showstats" begin
+    io = IOBuffer()
+    ThreadPools.showstats(io, "$(@__DIR__)/testlog.txt")
+    @test String(take!(io)) == """
+
+    Total duration: 1.542 s
+    Number of jobs: 8
+    Average job duration: 0.462 s
+    Minimum job duration: 0.111 s
+    Maximum job duration: 0.82 s
+
+    Thread 2: Duration 1.542 s, Gap time 0.0 s
+    Thread 3: Duration 1.23 s, Gap time 0.0 s
+    Thread 4: Duration 0.925 s, Gap time 0.0 s
+"""
+end
+
 if Threads.nthreads() > 1
     @testset "logbgforeach" begin
         io = IOBuffer()
@@ -145,6 +162,26 @@ if Threads.nthreads() > 1
         @test sum(length, values(log)) == Threads.nthreads()*2
         rm("_tmp.txt")
     end
+
+    @testset "@logthreads" begin
+        io = IOBuffer()
+        ThreadPools.@logthreads io for x in 1:Threads.nthreads()*2
+            sleep(0.01*x)
+        end
+        io = IOBuffer(take!(io))
+        log = ThreadPools.readlog(io)
+        @test haskey(log, 1)
+        @test sum(length, values(log)) == Threads.nthreads()*2
+
+        ThreadPools.@logthreads "_tmp2.txt" for x in 1:Threads.nthreads()*2
+            sleep(0.01*x)
+        end
+        log = ThreadPools.readlog("_tmp2.txt")
+        @test haskey(log, 1)
+        @test sum(length, values(log)) == Threads.nthreads()*2
+        rm("_tmp2.txt")
+    end
+
 end
 
 if Threads.nthreads() == 1
