@@ -1,10 +1,11 @@
 name = "ThreadPools"
 uuid = "b189fb0b-2eb5-4ed4-bc0c-d34c51242431"
 authors = ["Trey Roessig <roessig.trey@gmail.com"]
-version = "0.2.0"
+version = "1.0.0-pre"
 
 [deps]
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]

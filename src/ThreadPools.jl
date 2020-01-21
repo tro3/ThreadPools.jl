@@ -1,12 +1,16 @@
 module ThreadPools
 
-export bgforeach, bgmap, @bgthreads
-export fgforeach, fgmap, @fgthreads
-export ThreadPool, isactive, results
+export @bthreads, @qthreads, @qbthreads
+export @logthreads, @logbthreads, @logqthreads, @logqbthreads
+export pforeach, pmap, pwith, @pthreads, results
+export dumplog, readlog, showactivity, showstats
 
-include("pool.jl")
-include("logpool.jl")
-include("functions.jl")
-include("logfunctions.jl")
+include("interface.jl")
+include("logs.jl")
+include("staticpool.jl")
+include("qpool.jl")
+include("logstaticpool.jl")
+include("logqpool.jl")
+include("macros.jl")
 
 end # module

@@ -3,4 +3,6 @@ Manifest.toml
 /dev/
 lcov.info
 .vscode
-log.txt
+/log*
+/script*
+archive
