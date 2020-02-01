@@ -17,22 +17,17 @@ end
 #############################
 
 """
-    LoggedStaticPool(thrd0=1, nthrds=Threads.nthreads())
+    LoggedStaticPool(init_thrd=1, nthrds=Threads.nthreads())
 
 The main LoggedStaticPool object.
 """
-function LoggedStaticPool(thrd0::Integer=1, nthrds::Integer=Threads.nthreads())
-    thrd0 = min(thrd0, Threads.nthreads())
+function LoggedStaticPool(init_thrd::Integer=1, nthrds::Integer=Threads.nthreads())
+    thrd0 = min(init_thrd, Threads.nthreads())
     thrd1 = min(thrd0+nthrds-1, Threads.nthreads())
     return LoggedStaticPool(thrd0:thrd1, ReentrantLock(), ThreadRecord[], time_ns(), ThreadLog())
 end
 
 
-"""
-    Base.close(pool::LoggedStaticPool)
-
-
-"""
 function Base.close(pool::LoggedStaticPool)
     _recordstolog!(pool.log, pool.recs, pool. t0)
 end
@@ -47,11 +42,12 @@ function pmap(pool::LoggedStaticPool, fn::Function, itr)::Vector{_detect_type(fn
     sizehint!(pool.recs, N)
     result = Vector{_detect_type(fn, itr)}(undef, N)
     nts = length(pool.tids)
-    n = div(N,nts) + (N % nts > 0 ? 1 : 0)
+    n = div(N,nts)
+    r = N % nts
 
     _fn = (tind) -> begin
-        n0 = (tind-1)*n + 1
-        n1 = tind == nts ? N : tind*n
+        n0 = (tind-1)*n + 1 + (nts-tind+1 > r ? 0 : tind-nts+1)
+        n1 = n0-1 + n + (nts-tind+1 <= r ? 1 : 0)
         tid = Threads.threadid()
         for i in n0:n1
             lock(pool.lck)

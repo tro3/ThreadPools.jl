@@ -38,7 +38,7 @@ end
 #############################
 
 """
-    QueuePool(thrd0=1, nthrds=Threads.nthreads())
+    QueuePool(init_thrd=1, nthrds=Threads.nthreads())
 
 The main QueuePool object. Its API mimics that of a `Channel{Task}`, but each
 submitted task is executed on a different thread.  If `allow_primary` is true, 
@@ -49,8 +49,8 @@ Each thread will only be allowed one Task at a time, but each thread will
 backfill with the next queued Task immediately on completion of the previous,
 without regard to how bust the other threads may be.  
 """
-function QueuePool(thrd0::Integer=1, nthrds::Integer=Threads.nthreads())
-    thrd0 = min(thrd0, Threads.nthreads())
+function QueuePool(init_thrd::Integer=1, nthrds::Integer=Threads.nthreads())
+    thrd0 = min(init_thrd, Threads.nthreads())
     thrd1 = min(thrd0+nthrds-1, Threads.nthreads())
     return QueuePool(thrd0:thrd1, _default_handler)
 end

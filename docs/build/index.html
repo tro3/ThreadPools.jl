@@ -1,85 +1,12 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>ThreadPools.jl Documentation · ThreadPool Documentation</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">ThreadPool Documentation</span></div><form class="docs-search" action="search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>ThreadPools.jl Documentation</a><ul class="internal"><li><a class="tocitem" href="#Overview-1"><span>Overview</span></a></li><li><a class="tocitem" href="#Usage-1"><span>Usage</span></a></li><li><a class="tocitem" href="#Logger-Usage-1"><span>Logger Usage</span></a></li><li><a class="tocitem" href="#Demonstrations-1"><span>Demonstrations</span></a></li><li><a class="tocitem" href="#Simple-API-1"><span>Simple API</span></a></li><li class="toplevel"><a class="tocitem" href="#ThreadPool-API-1"><span>ThreadPool API</span></a></li><li class="toplevel"><a class="tocitem" href="#Logging-API-1"><span>Logging API</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>ThreadPools.jl Documentation</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>ThreadPools.jl Documentation</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/tro3/ThreadPools.jl/blob/master/docs/src/index.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="ThreadPools.jl-Documentation-1"><a class="docs-heading-anchor" href="#ThreadPools.jl-Documentation-1">ThreadPools.jl Documentation</a><a class="docs-heading-anchor-permalink" href="#ThreadPools.jl-Documentation-1" title="Permalink"></a></h1><p><em>Improved thread management for background and nonuniform tasks</em></p><p>A simple package that exposes a couple of macros that mimic  <code>Base.Threads.@threads</code>: <a href="#ThreadPools.@fgthreads"><code>@fgthreads</code></a> and <a href="#ThreadPools.@bgthreads"><code>@bgthreads</code></a>.   Both macros use active thread management to keep all threads busy, even when  processing tasks with varying durations.  The <code>@fgthreads</code> uses all available  threads, while <code>@bgthreads</code> version keeps the tasks in the background.  There are also version of the <code>Base.map</code> and <code>Base.foreach</code> functions that behave  similarly: <a href="#ThreadPools.fgmap-Tuple{Any,Any}"><code>fgmap</code></a>, <a href="#ThreadPools.bgmap-Tuple{Any,Any}"><code>bgmap</code></a>, <a href="#ThreadPools.fgforeach-Tuple{Any,Any}"><code>fgforeach</code></a>,  and <a href="#ThreadPools.bgforeach-Tuple{Any,Any}"><code>bgforeach</code></a>,  as well as logging versions of all of the above and the original <code>@threads</code> macro for tuning purposes.</p><h2 id="Overview-1"><a class="docs-heading-anchor" href="#Overview-1">Overview</a><a class="docs-heading-anchor-permalink" href="#Overview-1" title="Permalink"></a></h2><p>As of Julia 1.3, the algorithm of the <code>@threads</code> macro is to pre-divide the  incoming range into equal partitions running on each thread.  This is very  efficient for most use cases, but there are a couple of scenarios where this can present a problem:</p><ul><li>When something else is running on the primary thread, like a GUI or a web  server</li><li>When the tasks are very nonuniform, possibly leading to one thread working on the longer tasks while the others sit idle</li></ul><p>ThreadPools is a simple package that exposes foreground and background variants of <code>@threads</code>, <code>map</code>, and <code>foreach</code> that actively manage the threads, starting  a new task when the previous one completes and in the case of the background  versions, keeping them off the primary thread.  The foreground versions are prepended with <code>fg</code> and background with <code>bg</code>, leading to:</p><ul><li><a href="https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.@fgthreads"><code>@fgthreads</code></a></li><li><a href="https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.@bgthreads"><code>@bgthreads</code></a></li><li><a href="https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.fgmap-Tuple{Any,Any}"><code>fgmap</code></a></li><li><a href="https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.bgmap-Tuple{Any,Any}"><code>bgmap</code></a></li><li><a href="https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.fgforeach-Tuple{Any,Any}"><code>fgforeach</code></a></li><li><a href="https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.bgforeach-Tuple{Any,Any}"><code>bgforeach</code></a></li></ul><p>There are also versions of the above functions that will produce a task log to  help tune performance.  These are prepended with a <code>log</code> (for example, <a href="https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.logbgmap"><code>logbgmap</code></a> ).  There are also a logging version of <code>Base.Threads.@threads</code> to compare with  and some analysis utilities included.</p><h2 id="Usage-1"><a class="docs-heading-anchor" href="#Usage-1">Usage</a><a class="docs-heading-anchor-permalink" href="#Usage-1" title="Permalink"></a></h2><p>Each of the simple API functions can be used like the <code>Base</code> versions of the  same function: </p><pre><code class="language-julia">julia&gt; @bgthreads for x in 1:3
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>ThreadPools.jl · ThreadPool Documentation</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">ThreadPool Documentation</span></div><form class="docs-search" action="search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>ThreadPools.jl</a><ul class="internal"><li><a class="tocitem" href="#Overview-1"><span>Overview</span></a></li><li><a class="tocitem" href="#Usage-1"><span>Usage</span></a></li><li><a class="tocitem" href="#Logger-Usage-1"><span>Logger Usage</span></a></li><li><a class="tocitem" href="#Simple-API-1"><span>Simple API</span></a></li><li><a class="tocitem" href="#Composable-API-1"><span>Composable API</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>ThreadPools.jl</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>ThreadPools.jl</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/tro3/ThreadPools.jl/blob/master/docs/src/index.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="ThreadPools.jl-1"><a class="docs-heading-anchor" href="#ThreadPools.jl-1">ThreadPools.jl</a><a class="docs-heading-anchor-permalink" href="#ThreadPools.jl-1" title="Permalink"></a></h1><p><em>Improved thread management for background and nonuniform tasks</em></p><h2 id="Overview-1"><a class="docs-heading-anchor" href="#Overview-1">Overview</a><a class="docs-heading-anchor-permalink" href="#Overview-1" title="Permalink"></a></h2><p>Documentation at https://tro3.github.io/ThreadPools.jl</p><p>ThreadPools.jl is a simple package that exposes a few macros and functions that mimic <code>Base.Threads.@threads</code>, <code>Base.map</code>, and <code>Base.foreach</code>. These  macros (and the underlying API) handle cases that the built-in functions are  not always well-suited for:</p><ul><li>A group of tasks that the user wants to keep off of the primary thread</li><li>A group of tasks that are very nonuniform in duration</li></ul><p>For the first case, ThreadPools exposes a <code>@bthreads</code> (&quot;background threads&quot;)  macro that behaves identically to <code>Threads.@threads</code>, but keeps the primary thread job-free.  There are also related <code>bmap</code> and <code>bforeach</code> functions that mimic their <code>Base</code> counterparts, but with the same non-primary  thread usage.</p><p>For the second case, the package exposes a <code>@qthreads</code> (&quot;queued threads&quot;) macro.   This macro uses a different scheduling strategy to help with nonuniform jobs.   <code>@threads</code> and <code>@bthreads</code> first divide the incoming job list into equal job  &quot;chunks&quot;, then launch each  chunk on a separate thread for processing.  If the jobs are not uniform, this can lead to some long jobs all getting assigned to one thread, delaying  completion.  <code>@qthreads</code> does not pre-assign threads - it only starts a new  job as an old one finishes, so if a long job comes along, the other threads  will keep operating on the shorter ones.  <code>@qthreads</code> itself does use the  primary thread, but its cousin <code>@qbthreads</code> uses the same strategy but in the background. There are also <code>qmap</code>, <code>qforeach</code>, <code>qbmap</code>, and <code>qbforeach</code>.</p><h3 id="Simple-Macro/Function-Selection-1"><a class="docs-heading-anchor" href="#Simple-Macro/Function-Selection-1">Simple Macro/Function Selection</a><a class="docs-heading-anchor-permalink" href="#Simple-Macro/Function-Selection-1" title="Permalink"></a></h3><table><tr><th style="text-align: left">Task Type</th><th style="text-align: left">Foreground (primary allowed)</th><th style="text-align: left">Background (primary forbidden)</th></tr><tr><td style="text-align: left"><strong>Uniform tasks</strong></td><td style="text-align: left"><code>Base.Threads.@threads</code> <code>ThreadPools.pmap(fn, itrs)</code> <code>ThreadPools.pforeach(fn, itrs)</code></td><td style="text-align: left"><code>ThreadPools.@bthreads</code> <code>ThreadPools.bmap(fn, itrs)</code> <code>ThreadPools.bforeach(fn, itrs)</code></td></tr><tr><td style="text-align: left"><strong>Nonuniform tasks</strong></td><td style="text-align: left"><code>ThreadPools.@qthreads</code> <code>ThreadPools.qmap(fn, itrs)</code> <code>ThreadPools.qforeach(fn, itrs)</code></td><td style="text-align: left"><code>ThreadPools.@qbthreads</code> <code>ThreadPools.qbmap(fn, itrs)</code> <code>ThreadPools.qbforeach(fn, itrs)</code></td></tr></table><h3 id="Job-Logging-for-Performance-Tuning-1"><a class="docs-heading-anchor" href="#Job-Logging-for-Performance-Tuning-1">Job Logging for Performance Tuning</a><a class="docs-heading-anchor-permalink" href="#Job-Logging-for-Performance-Tuning-1" title="Permalink"></a></h3><p>Each of the above macros comes with a logging version that allows the user to  analyze the performance of the chosen strategy and thread count:</p><table><tr><th style="text-align: left">Task Type</th><th style="text-align: left">Foreground</th><th style="text-align: left">Background</th></tr><tr><td style="text-align: left"><strong>Uniform tasks</strong></td><td style="text-align: left"><code>ThreadPools.@logthreads</code> <code>ThreadPools.logpmap(fn, itrs)</code> <code>ThreadPools.logpforeach(fn, itrs)</code></td><td style="text-align: left"><code>ThreadPools.@logbthreads</code> <code>ThreadPools.logbmap(fn, itrs)</code> <code>ThreadPools.logbforeach(fn, itrs)</code></td></tr><tr><td style="text-align: left"><strong>Nonuniform tasks</strong></td><td style="text-align: left"><code>ThreadPools.@logqthreads</code> <code>ThreadPools.logqmap(fn, itrs)</code> <code>ThreadPools.logqforeach(fn, itrs)</code></td><td style="text-align: left"><code>ThreadPools.@logqbthreads</code> <code>ThreadPools.logqbmap(fn, itrs)</code> <code>ThreadPools.logqbforeach(fn, itrs)</code></td></tr></table><p>Please see below for usage examples.</p><h2 id="Usage-1"><a class="docs-heading-anchor" href="#Usage-1">Usage</a><a class="docs-heading-anchor-permalink" href="#Usage-1" title="Permalink"></a></h2><p>Each of the simple API functions can be used like the <code>Base</code> versions of the  same function: </p><pre><code class="language-julia">julia&gt; @qbthreads for x in 1:3
          println(&quot;$x $(Threads.threadid())&quot;)
        end
 2 3
 3 4
 1 2
 
-julia&gt; bgmap([1,2,3]) do x
-         println(&quot;$x $(Threads.threadid())&quot;)
-         x^2
-       end
-2 3
-3 4
-1 2
-3-element Array{Int64,1}:
- 1
- 4
- 9</code></pre><p>Note that while the execution order is not guaranteed across threads, but the  result of <code>bgmap</code> will of course match the input. For an example  of a more complex load-management scenario, see <code>examples/stackdemo.jl</code>.</p><h2 id="Logger-Usage-1"><a class="docs-heading-anchor" href="#Logger-Usage-1">Logger Usage</a><a class="docs-heading-anchor-permalink" href="#Logger-Usage-1" title="Permalink"></a></h2><p>The logging versions of the functions take either an IO for the log or a  filename to be created and used as the log.  The <code>readlog</code>,  <code>showstats</code>, and <code>showactivity</code> functions help visualize  the activity  (here, a 4-thread system using the primary with  <code>fgforeach</code>:</p><pre><code class="language-julia">julia&gt; ThreadPools.logfgforeach(x -&gt; sleep(0.1*x), &quot;log.txt&quot;, 1:8)
-
-julia&gt; log = ThreadPools.readlog(&quot;log.txt&quot;)
-Dict{Int64,Array{ThreadPools.Job,1}} with 4 entries:
-  4 =&gt; ThreadPools.Job[Job(3, 4, 0.016, 0.328), Job(7, 4, 0.328, 1.039)]
-  2 =&gt; ThreadPools.Job[Job(2, 2, 0.016, 0.228), Job(6, 2, 0.228, 0.843)]
-  3 =&gt; ThreadPools.Job[Job(1, 3, 0.016, 0.128), Job(5, 3, 0.128, 0.629)]
-  1 =&gt; ThreadPools.Job[Job(4, 1, 0.016, 0.428), Job(8, 1, 0.428, 1.233)]
-
-julia&gt; ThreadPools.showstats(log)
-
-    Total duration: 1.217 s
-    Number of jobs: 8
-    Average job duration: 0.46 s
-    Minimum job duration: 0.112 s
-    Maximum job duration: 0.805 s
-
-    Thread 1: Duration 1.217 s, Gap time 0.0 s
-    Thread 2: Duration 0.827 s, Gap time 0.0 s
-    Thread 3: Duration 0.613 s, Gap time 0.0 s
-    Thread 4: Duration 1.023 s, Gap time 0.0 s
-
-julia&gt; ThreadPools.showactivity(log, 0.1)
-0.000   -   -   -   -
-0.100   4   2   1   3
-0.200   4   2   5   3
-0.300   4   6   5   3
-0.400   4   6   5   7
-0.500   8   6   5   7
-0.600   8   6   5   7
-0.700   8   6   -   7
-0.800   8   6   -   7
-0.900   8   -   -   7
-1.000   8   -   -   7
-1.100   8   -   -   -
-1.200   8   -   -   -
-1.300   -   -   -   -
-1.400   -   -   -   -</code></pre><h2 id="Demonstrations-1"><a class="docs-heading-anchor" href="#Demonstrations-1">Demonstrations</a><a class="docs-heading-anchor-permalink" href="#Demonstrations-1" title="Permalink"></a></h2><p>There are a couple of demonstrations in the <code>examples</code> directory.  <code>demo.jl</code>  shows how jobs are distributed across threads in both the <code>@threads</code> and  <code>@bgthreads</code> cases for various workload distributions.  Running these demos  is fairly simple (results below on 4 threads):</p><pre><code class="language-none">julia&gt; include(&quot;examples/demo.jl&quot;)
-Main.Demo
-
-julia&gt; Demo.run_with_outliers()
-
-
-@bgthreads, Active Job Per Thread on 200ms Intervals
-
-   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
-   0   6  14  25  29  31  31  40  49  52  62  68  73  83  89   0 100 105 109 109 109 109 109 109 132 137 141 147   0   0   0
-   0   8  15  20  30  33  33  33  50  57  63  66  66  84  90  94   0 104 108 112 116 121 123 127 131 134 134 134   0   0   0
-   0   9  12  24  24  24  35  38   0  56  61  69   0  82  91  95  98  98  98 113 117 120 120 120 120 135 142 146   0   0   0
-
-
-@threads, Active Job Per Thread on 200ms Intervals
-
-   0   4   6   9  10  12  15  16  20  24  24  24  28  29  31  31  32  33  33  34  37   0   0   0   0   0
-   0  43  46  50  52  54  56  60  62  65  66  66  68  70  73   0   0   0   0   0   0   0   0   0   0   0
-   0  79  82  84  87  90  92  94  96  98  98  98  98 100 101 104 106 108 109 109 109 109 109 110 112   0
-   0 117 119 120 120 120 120 121 124 127 131 133 134 134 134 137 141 143 146 149   0   0   0   0   0   0
-
-Speed increase using all threads (ideal 33.3%): 14.4%</code></pre><p>These demos generate numbered jobs with a randomized work distribution that can  be varied.  There are normal, uniform,  and uniform with 10% outliers of 10x  distributions.  The activity graphs in these demos present time-sliced shapshots  of the thread activities, showing which job number was active in that time  slice.</p><p>The available demos are:</p><ul><li><code>Demo.run_with_uniform()</code></li><li><code>Demo.run_with_variation()</code></li><li><code>Demo.run_with_outliers()</code></li></ul><p>There is also a more complex demo at <code>examples/stackdemo.jl</code>.  Here, the  workload is heirarchal - each jobs produces a result and possibly more jobs.  The primary thread in this case is used purely more managing the job stack.</p><h2 id="Simple-API-1"><a class="docs-heading-anchor" href="#Simple-API-1">Simple API</a><a class="docs-heading-anchor-permalink" href="#Simple-API-1" title="Permalink"></a></h2><p>Each function of the simple API tries to mimic an existing function in <code>Base</code>  or <code>Base.Threads</code> to keep any code rework to a minimum.</p><ul><li><a href="#ThreadPools.bgforeach-Tuple{Any,Any}"><code>bgforeach(fn, itr)</code></a></li><li><a href="#ThreadPools.bgmap-Tuple{Any,Any}"><code>bgmap(fn, itr)</code></a></li><li><a href="#ThreadPools.@bgthreads"><code>@bgthreads</code></a></li><li><a href="#ThreadPools.fgforeach-Tuple{Any,Any}"><code>fgforeach(fn, itr)</code></a></li><li><a href="#ThreadPools.fgmap-Tuple{Any,Any}"><code>fgmap(fn, itr)</code></a></li><li><a href="#ThreadPools.@fgthreads"><code>@fgthreads</code></a></li></ul><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.bgforeach-Tuple{Any,Any}" href="#ThreadPools.bgforeach-Tuple{Any,Any}"><code>ThreadPools.bgforeach</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">bgforeach(fn, itrs...) -&gt; Nothing</code></pre><p>Mimics the  <a href="https://docs.julialang.org/en/v1/base/collections/#Base.foreach"><code>Base.foreach</code></a>  function, but spawns each iteration to a background thread.  Falls back to  <a href="https://docs.julialang.org/en/v1/base/collections/#Base.foreach"><code>Base.foreach</code></a>  when nthreads() == 1.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; bgforeach([1,2,3]) do x
-    println(&quot;$(x+1) $(Threads.threadid())&quot;)
-  end
-3 3
-4 4
-2 2</code></pre><p>Note that the execution order across the threads is not guaranteed.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/functions.jl#L2-L21">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.bgmap-Tuple{Any,Any}" href="#ThreadPools.bgmap-Tuple{Any,Any}"><code>ThreadPools.bgmap</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">bgmap(fn, itrs...) -&gt; collection</code></pre><p>Mimics the  <a href="https://docs.julialang.org/en/v1/base/collections/#Base.map"><code>Base.map</code></a>  function, but spawns each case to a background thread.  Falls back to  <code>Base.map</code> when nthreads() == 1.</p><p>Note that the collection(s) supplied must be of equal and finite length.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; bgmap([1,2,3]) do x
+julia&gt; bmap([1,2,3]) do x
          println(&quot;$x $(Threads.threadid())&quot;)
          x^2
        end
@@ -89,41 +16,322 @@ Speed increase using all threads (ideal 33.3%): 14.4%</code></pre><p>These demos
 3-element Array{Int64,1}:
  1
  4
- 9</code></pre><p>Note that while the thread execution order is not guaranteed, the final  result will maintain the proper sequence.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/functions.jl#L60-L86">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.@bgthreads" href="#ThreadPools.@bgthreads"><code>ThreadPools.@bgthreads</code></a> — <span class="docstring-category">Macro</span></header><section><div><pre><code class="language-julia">@bgthreads</code></pre><p>A macro to parallelize a for-loop to run with multiple threads, preventing use of the primary.  </p><p><code>@bgthreads</code> mimics the  <a href="https://docs.julialang.org/en/v1/base/multi-threading/#Base.Threads.@threads"><code>Threads.@threads</code></a>  macro, but keeps the activity off of the primary thread.  Will fall back  gracefully to <code>Base.foreach</code> behavior when nthreads == 1.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; @bgthreads for x in 1:3
-        println(&quot;$x $(Threads.threadid())&quot;)
+ 9</code></pre><p>Note that both of the above examples use the background versions and no  threadid==1 is seen.  Also note that while the execution order is not  guaranteed across threads, but the result of <code>bmap</code> will of course match  the input. </p><h2 id="Logger-Usage-1"><a class="docs-heading-anchor" href="#Logger-Usage-1">Logger Usage</a><a class="docs-heading-anchor-permalink" href="#Logger-Usage-1" title="Permalink"></a></h2><p>The logging versions of the above functions all produce an <code>AbstractThreadPool</code>  object that has an in-memory log of the start and stop times of each job that  ran through the pool.  A <code>PlotRecipe</code> from <code>RecipesBase</code> is exposed in the  package, so all that is needed to generate a visualization of the job times is  the <code>plot</code> command from <code>Plots</code>.  In these plots, each job is shown by index, start time, and stop time and is given a color corresponding to its thread:</p><pre><code class="language-julia">julia&gt; using Plots
+
+julia&gt; pool = logpforeach(x -&gt; sleep(0.1*x), 1:8);
+
+julia&gt; plot(pool)</code></pre><p><img src="img/staticlog.png" alt="pforeach plot"/></p><pre><code class="language-julia">julia&gt; pool = logqforeach(x -&gt; sleep(0.1*x), 1:8);
+
+julia&gt; plot(pool)</code></pre><p><img src="img/qlog.png" alt="qforeach plot"/></p><p>Note the two different scheduling strategies are seen in the above plots. The  <code>pforeach</code> log shows that the jobs were assigned in order: 1 &amp; 2 to  thread 1, 3 &amp; 4 to thread 2, and so on.  The <code>qforeach</code> shows that each job (any thread) is started when the previous job on that thread completes. Because these jobs are very nonuniform (and stacked against the first strategy), this results in the pre-assign method taking 25% longer.</p><h2 id="Simple-API-1"><a class="docs-heading-anchor" href="#Simple-API-1">Simple API</a><a class="docs-heading-anchor-permalink" href="#Simple-API-1" title="Permalink"></a></h2><p>Each function of the simple API tries to mimic an existing function in <code>Base</code>  or <code>Base.Threads</code> to keep any code rework to a minimum.</p><h3 id="Regular-Versions-1"><a class="docs-heading-anchor" href="#Regular-Versions-1">Regular Versions</a><a class="docs-heading-anchor-permalink" href="#Regular-Versions-1" title="Permalink"></a></h3><ul><li><a href="#ThreadPools.@bthreads"><code>@bthreads</code></a></li><li><a href="#ThreadPools.@qthreads"><code>@qthreads</code></a></li><li><a href="#ThreadPools.@qbthreads"><code>@qbthreads</code></a></li><li><a href="#ThreadPools.pmap-Tuple{Function,Any}"><code>pmap(fn, itr)</code></a></li><li><a href="#ThreadPools.bmap-Tuple{Any,Any}"><code>bmap(fn, itr)</code></a></li><li><a href="#ThreadPools.qmap-Tuple{Any,Any}"><code>qmap(fn, itr)</code></a></li><li><a href="#ThreadPools.qbmap-Tuple{Any,Any}"><code>qbmap(fn, itr)</code></a></li><li><a href="#ThreadPools.pforeach-Tuple{Function,Any}"><code>pforeach(fn, itr)</code></a></li><li><a href="#ThreadPools.bforeach-Tuple{Any,Any}"><code>bforeach(fn, itr)</code></a></li><li><a href="#ThreadPools.qforeach-Tuple{Any,Any}"><code>qforeach(fn, itr)</code></a></li><li><a href="#ThreadPools.qbforeach-Tuple{Any,Any}"><code>qbforeach(fn, itr)</code></a></li></ul><h3 id="Logging-Versions-1"><a class="docs-heading-anchor" href="#Logging-Versions-1">Logging Versions</a><a class="docs-heading-anchor-permalink" href="#Logging-Versions-1" title="Permalink"></a></h3><ul><li><a href="#ThreadPools.@logthreads"><code>@logthreads</code></a></li><li><a href="#ThreadPools.@logbthreads"><code>@logbthreads</code></a></li><li><a href="#ThreadPools.@logqthreads"><code>@logqthreads</code></a></li><li><a href="#ThreadPools.@logqbthreads"><code>@logqbthreads</code></a></li><li><a href="#ThreadPools.logpmap-Tuple{Function,Any}"><code>logpmap(fn, itr)</code></a></li><li><a href="#ThreadPools.logbmap-Tuple{Any,Any}"><code>logbmap(fn, itr)</code></a></li><li><a href="#ThreadPools.logqmap-Tuple{Any,Any}"><code>logqmap(fn, itr)</code></a></li><li><a href="#ThreadPools.logqbmap-Tuple{Any,Any}"><code>logqbmap(fn, itr)</code></a></li><li><a href="#ThreadPools.logpforeach-Tuple{Function,Any}"><code>logpforeach(fn, itr)</code></a></li><li><a href="#ThreadPools.logbforeach-Tuple{Any,Any}"><code>logbforeach(fn, itr)</code></a></li><li><a href="#ThreadPools.logqforeach-Tuple{Any,Any}"><code>logqforeach(fn, itr)</code></a></li><li><a href="#ThreadPools.logqbforeach-Tuple{Any,Any}"><code>logqbforeach(fn, itr)</code></a></li></ul><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.@bthreads" href="#ThreadPools.@bthreads"><code>ThreadPools.@bthreads</code></a> — <span class="docstring-category">Macro</span></header><section><div><pre><code class="language-julia">@bthreads</code></pre><p>Mimics <code>Base.Threads.@threads, but keeps the iterated tasks off if the primary  thread.</code></p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; @bthreads for x in 1:8
+         println((x, Threads.threadid()))
        end
-2 3
-3 4
-1 2</code></pre><p>Note that the execution order across the threads is not guaranteed.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/functions.jl#L142-L163">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.fgforeach-Tuple{Any,Any}" href="#ThreadPools.fgforeach-Tuple{Any,Any}"><code>ThreadPools.fgforeach</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">fgforeach(fn, itrs...) -&gt; Nothing</code></pre><p>Equivalent to <a href="#ThreadPools.bgforeach-Tuple{Any,Any}"><code>bgforeach(fn, itrs...)</code></a>, but allows processing on the primary thread.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; fgforeach([1,2,3,4,5]) do x
-         println(&quot;$(x+1) $(Threads.threadid())&quot;)
+(1, 2)
+(6, 4)
+(3, 3)
+(7, 4)
+(4, 3)
+(8, 4)
+(5, 3)
+(2, 2)</code></pre><p>Note that execution order is not guaranteed, but the primary thread does not show up on any of the jobs.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/macros.jl#L32-L54">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.@qthreads" href="#ThreadPools.@qthreads"><code>ThreadPools.@qthreads</code></a> — <span class="docstring-category">Macro</span></header><section><div><pre><code class="language-julia">@qthreads</code></pre><p>Mimics <code>Base.Threads.@threads</code>, but uses a task queueing strategy, only starting  a new task when an previous one (on any thread) has completed.  This can provide performance advantages when the iterated tasks are very nonuniform in length.  The primary thread is used.  To prevent usage of the primary thread, see  <a href="#ThreadPools.@qbthreads"><code>@qbthreads</code></a>.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; @qthreads for x in 1:8
+         println((x, Threads.threadid()))
        end
-3 1
-2 2
-4 3
-5 4
-6 1</code></pre><p>Note that the primary thread was used to process indexes 2 and 5, in this case.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/functions.jl#L26-L44">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.fgmap-Tuple{Any,Any}" href="#ThreadPools.fgmap-Tuple{Any,Any}"><code>ThreadPools.fgmap</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">fgmap(fn, itrs...) -&gt; collection</code></pre><p>Equivalent to <a href="#ThreadPools.bgmap-Tuple{Any,Any}"><code>bgmap(fn, itrs...)</code></a>, but allows processing on the primary thread.</p><p>Note that the collection(s) supplied must be of equal and finite length.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; fgmap([1,2,3,4,5]) do x
-         println(&quot;$x $(Threads.threadid())&quot;)
+(2, 4)
+(3, 3)
+(4, 2)
+(5, 4)
+(6, 3)
+(7, 2)
+(8, 4)
+(1, 1)</code></pre><p>Note that execution order is not guaranteed and the primary thread is used.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/macros.jl#L60-L84">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.@qbthreads" href="#ThreadPools.@qbthreads"><code>ThreadPools.@qbthreads</code></a> — <span class="docstring-category">Macro</span></header><section><div><pre><code class="language-julia">@qbthreads</code></pre><p>Mimics <code>Base.Threads.@threads</code>, but uses a task queueing strategy, only starting  a new task when an previous one (on any thread) has completed.  This can provide performance advantages when the iterated tasks are very nonuniform in length.  The primary thread is not used.  To allow usage of the primary thread, see  <a href="#ThreadPools.@qthreads"><code>@qthreads</code></a>.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; @qbthreads for x in 1:8
+         println((x, Threads.threadid()))
+       end
+(2, 4)
+(3, 2)
+(1, 3)
+(4, 4)
+(5, 2)
+(6, 3)
+(7, 4)
+(8, 2)</code></pre><p>Note that execution order is not guaranteed, but the primary thread does not show up on any of the jobs.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/macros.jl#L89-L114">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.pmap-Tuple{Function,Any}" href="#ThreadPools.pmap-Tuple{Function,Any}"><code>ThreadPools.pmap</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">pmap(fn::Function, itr) -&gt; collection</code></pre><p>Mimics <code>Base.map</code>, but launches the function evaluations onto all available  threads, using a pre-assigned scheduling strategy appropriate for uniform task durations.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; pmap(x -&gt; begin; println((x,Threads.threadid())); x^2; end, 1:8)&#39;
+(7, 4)
+(5, 3)
+(8, 4)
+(1, 1)
+(6, 3)
+(2, 1)
+(3, 2)
+(4, 2)
+1×8 LinearAlgebra.Adjoint{Int64,Array{Int64,1}}:
+ 1  4  9  16  25  36  49  64</code></pre><p>Note that while the execution order is not guaranteed, the result order is.  Also note that the primary thread is used.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/simplefuncs.jl#L2-L25">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.bmap-Tuple{Any,Any}" href="#ThreadPools.bmap-Tuple{Any,Any}"><code>ThreadPools.bmap</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">bmap(fn::Function, itr) -&gt; collection</code></pre><p>Mimics <code>Base.map</code>, but launches the function evaluations onto all available  threads except the primary, using a pre-assigned scheduling strategy  appropriate for uniform task durations.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; bmap(x -&gt; begin; println((x,Threads.threadid())); x^2; end, 1:8)&#39;
+(6, 4)
+(1, 2)
+(3, 3)
+(2, 2)
+(4, 3)
+(7, 4)
+(5, 3)
+(8, 4)
+1×8 LinearAlgebra.Adjoint{Int64,Array{Int64,1}}:
+ 1  4  9  16  25  36  49  64</code></pre><p>Note that while the execution order is not guaranteed, the result order is,  Also note that the primary thread is not used.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/simplefuncs.jl#L34-L57">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.qmap-Tuple{Any,Any}" href="#ThreadPools.qmap-Tuple{Any,Any}"><code>ThreadPools.qmap</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">qmap(fn::Function, itr) -&gt; collection</code></pre><p>Mimics <code>Base.map</code>, but launches the function evaluations onto all available  threads, using a queued scheduling strategy appropriate for nonuniform task durations.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; qmap(x -&gt; begin; println((x,Threads.threadid())); x^2; end, 1:8)&#39;
+(2, 3)
+(3, 2)
+(4, 4)
+(5, 3)
+(6, 2)
+(7, 4)
+(8, 3)
+(1, 1)
+1×8 LinearAlgebra.Adjoint{Int64,Array{Int64,1}}:
+ 1  4  9  16  25  36  49  64</code></pre><p>Note that while the execution order is not guaranteed, the result order is.  Also note that the primary thread is used.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/simplefuncs.jl#L66-L89">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.qbmap-Tuple{Any,Any}" href="#ThreadPools.qbmap-Tuple{Any,Any}"><code>ThreadPools.qbmap</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">qbmap(fn::Function, itr) -&gt; collection</code></pre><p>Mimics <code>Base.map</code>, but launches the function evaluations onto all available  threads except the primary, using a queued scheduling strategy appropriate  for nonuniform task durations.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; qbmap(x -&gt; begin; println((x,Threads.threadid())); x^2; end, 1:8)&#39;
+(2, 3)
+(1, 2)
+(3, 4)
+(5, 2)
+(4, 3)
+(6, 4)
+(7, 2)
+(8, 3)
+1×8 LinearAlgebra.Adjoint{Int64,Array{Int64,1}}:
+ 1  4  9  16  25  36  49  64</code></pre><p>Note that while the execution order is not guaranteed, the result order is,  Also note that the primary thread is not used.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/simplefuncs.jl#L98-L121">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.pforeach-Tuple{Function,Any}" href="#ThreadPools.pforeach-Tuple{Function,Any}"><code>ThreadPools.pforeach</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">pforeach(fn::Function, itr)</code></pre><p>Mimics <code>Base.foreach</code>, but launches the function evaluations onto all available  threads, using a pre-assigned scheduling strategy appropriate for uniform task durations.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; pforeach(x -&gt; println((x,Threads.threadid())), 1:8)
+(1, 1)
+(3, 2)
+(5, 3)
+(2, 1)
+(7, 4)
+(4, 2)
+(8, 4)
+(6, 3)</code></pre><p>Note that the execution order is not guaranteed, and that the primary thread  is used.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/simplefuncs.jl#L291-L312">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.bforeach-Tuple{Any,Any}" href="#ThreadPools.bforeach-Tuple{Any,Any}"><code>ThreadPools.bforeach</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">bforeach(fn::Function, itr)</code></pre><p>Mimics <code>Base.foreach</code>, but launches the function evaluations onto all available  threads except the primary, using a pre-assigned scheduling strategy appropriate  for uniform task durations.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; bforeach(x -&gt; println((x,Threads.threadid())), 1:8)
+(1, 2)
+(6, 4)
+(2, 2)
+(7, 4)
+(8, 4)
+(3, 3)
+(4, 3)
+(5, 3)</code></pre><p>Note that the execution order is not guaranteed, and that the primary thread  is not used.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/simplefuncs.jl#L321-L342">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.qforeach-Tuple{Any,Any}" href="#ThreadPools.qforeach-Tuple{Any,Any}"><code>ThreadPools.qforeach</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">qforeach(fn::Function, itr)</code></pre><p>Mimics <code>Base.foreach</code>, but launches the function evaluations onto all available  threads, using a queued scheduling strategy appropriate for nonuniform task durations.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; qforeach(x -&gt; println((x,Threads.threadid())), 1:8)
+(4, 3)
+(2, 2)
+(3, 4)
+(5, 3)
+(6, 2)
+(7, 4)
+(8, 3)
+(1, 1)</code></pre><p>Note that the execution order is not guaranteed, and that the primary thread  is used.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/simplefuncs.jl#L350-L371">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.qbforeach-Tuple{Any,Any}" href="#ThreadPools.qbforeach-Tuple{Any,Any}"><code>ThreadPools.qbforeach</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">qbforeach(fn::Function, itr)</code></pre><p>Mimics <code>Base.foreach</code>, but launches the function evaluations onto all available  threads except the primary, using a queued scheduling strategy appropriate for  nonuniform task durations.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; qbforeach(x -&gt; println((x,Threads.threadid())), 1:8)
+(3, 3)
+(2, 4)
+(1, 2)
+(4, 3)
+(5, 4)
+(6, 2)
+(7, 3)
+(8, 4)</code></pre><p>Note that the execution order is not guaranteed, and that the primary thread  is not used.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/simplefuncs.jl#L380-L401">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.@logthreads" href="#ThreadPools.@logthreads"><code>ThreadPools.@logthreads</code></a> — <span class="docstring-category">Macro</span></header><section><div><pre><code class="language-julia">@logthreads -&gt; pool</code></pre><p>Mimics <code>Base.Threads.@threads</code>.  Returns a logged pool that can be analyzed with  the logging functions and <code>plot</code>ted.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; pool = @logthreads for x in 1:8
+         println((x, Threads.threadid()))
+       end;
+(1, 1)
+(5, 3)
+(7, 4)
+(2, 1)
+(6, 3)
+(8, 4)
+(3, 2)
+(4, 2)
+
+julia&gt; plot(pool)</code></pre><p>Note that execution order is not guaranteed and the primary thread is used.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/macros.jl#L119-L142">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.@logbthreads" href="#ThreadPools.@logbthreads"><code>ThreadPools.@logbthreads</code></a> — <span class="docstring-category">Macro</span></header><section><div><pre><code class="language-julia">@logbthreads -&gt; pool</code></pre><p>Mimics <code>Base.Threads.@threads, but keeps the iterated tasks off if the primary  thread.</code>  Returns a logged pool that can be analyzed with the logging functions  and <code>plot</code>ted.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; pool = @logbthreads for x in 1:8
+         println((x, Threads.threadid()))
+       end;
+(3, 4)
+(2, 3)
+(1, 2)
+(4, 4)
+(5, 3)
+(6, 2)
+(8, 3)
+(7, 4)
+
+julia&gt; plot(pool)</code></pre><p>Note that execution order is not guaranteed, but the primary thread does not show up on any of the jobs.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/macros.jl#L147-L172">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.@logqthreads" href="#ThreadPools.@logqthreads"><code>ThreadPools.@logqthreads</code></a> — <span class="docstring-category">Macro</span></header><section><div><pre><code class="language-julia">@logqthreads -&gt; pool</code></pre><p>Mimics <code>Base.Threads.@threads</code>, but uses a task queueing strategy, only starting  a new task when an previous one (on any thread) has completed.  Returns a logged  pool that can be analyzed with the logging functions and <code>plot</code>ted. The primary  thread is used.  To prevent usage of the primary thread, see  <a href="#ThreadPools.@logqbthreads"><code>@logqbthreads</code></a>.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; pool = @logqthreads for x in 1:8
+         println((x, Threads.threadid()))
+       end;
+(1, 1)
+(3, 2)
+(7, 4)
+(5, 3)
+(2, 1)
+(8, 4)
+(6, 3)
+(4, 2)
+
+julia&gt; plot(pool)</code></pre><p>Note that execution order is not guaranteed and the primary thread is used.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/macros.jl#L177-L203">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.@logqbthreads" href="#ThreadPools.@logqbthreads"><code>ThreadPools.@logqbthreads</code></a> — <span class="docstring-category">Macro</span></header><section><div><pre><code class="language-julia">@logqbthreads -&gt; pool</code></pre><p>Mimics <code>Base.Threads.@threads</code>, but uses a task queueing strategy, only starting  a new task when an previous one (on any thread) has completed.  Returns a logged  pool that can be analyzed with the logging functions and <code>plot</code>ted. The primary  thread is not used.  To allow usage of the primary thread, see  <a href="#ThreadPools.@logqthreads"><code>@logqthreads</code></a>.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; pool = @logqbthreads for x in 1:8
+         println((x, Threads.threadid()))
+       end;
+(2, 3)
+(1, 4)
+(3, 2)
+(4, 3)
+(5, 4)
+(6, 2)
+(7, 3)
+(8, 4)
+
+julia&gt; plot(pool)</code></pre><p>Note that execution order is not guaranteed, but the primary thread does not show up on any of the jobs.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/macros.jl#L208-L235">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.logpmap-Tuple{Function,Any}" href="#ThreadPools.logpmap-Tuple{Function,Any}"><code>ThreadPools.logpmap</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">logpmap(fn::Function, itr) -&gt; (pool, collection)</code></pre><p>Mimics <code>Base.map</code>, but launches the function evaluations onto all available  threads, using a pre-assigned scheduling strategy appropriate for uniform task durations.  Also returns a logged pool that can be analyzed with  the logging functions and <code>plot</code>ted.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; (pool, result) = logpmap(1:8) do x
+         println((x,Threads.threadid()))
          x^2
-       end
-4 4
-1 2
-3 3
-5 4
-2 1
-5-element Array{Int64,1}:
-1
-4
-9
-16
-25</code></pre><p>Note that the primary thread was used to process index 2, in this case.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/functions.jl#L91-L118">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.@fgthreads" href="#ThreadPools.@fgthreads"><code>ThreadPools.@fgthreads</code></a> — <span class="docstring-category">Macro</span></header><section><div><pre><code class="language-julia">@fgthreads</code></pre><p>A macro to parallelize a for-loop to run with multiple threads, allowing use of the primary. </p><p>Equivalent to <a href="#ThreadPools.@bgthreads"><code>@bgthreads</code></a>, but allows processing on the primary thread.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; @fgthreads for x in 1:5
-    println(&quot;$x $(Threads.threadid())&quot;)
-   end
-4 3
-1 4
-2 2
-5 3
-3 1</code></pre><p>Note that the primary thread was used to process index 3, in this case.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/functions.jl#L192-L213">source</a></section></article><h1 id="ThreadPool-API-1"><a class="docs-heading-anchor" href="#ThreadPool-API-1">ThreadPool API</a><a class="docs-heading-anchor-permalink" href="#ThreadPool-API-1" title="Permalink"></a></h1><p>The <a href="#ThreadPools.ThreadPool"><code>ThreadPool</code></a> mimics the <code>Channel{Task}</code> API,  where <code>put!</code>ting a <code>Task</code> causes it to be executed, and <code>take!</code> returns the  completed <code>Task</code>.  The <code>ThreadPool</code> is iterable over the completed <code>Task</code>s in the same way a <code>Channel</code> would be.</p><ul><li><a href="#ThreadPools.ThreadPool"><code>ThreadPools.ThreadPool</code></a></li><li><a href="#Base.put!(pool::ThreadPools.ThreadPool, t::Task)"><code>Base.put!(pool::ThreadPool, t::Task)</code></a></li><li><a href="#Base.put!(pool::ThreadPools.ThreadPool, fn::Function, args...)"><code>Base.put!(pool::ThreadPool, fn::Function, args...)</code></a></li><li><a href="#Base.take!(pool::ThreadPools.ThreadPool, ind::Integer)"><code>Base.take!(pool::ThreadPool, ind::Integer)</code></a></li><li><a href="#Base.close(pool::ThreadPools.ThreadPool)"><code>Base.close(pool::ThreadPool)</code></a></li><li><a href="#ThreadPools.isactive-Tuple{ThreadPool}"><code>isactive(pool::ThreadPool)</code></a></li><li><a href="#ThreadPools.results-Tuple{ThreadPool}"><code>results(pool::ThreadPool)</code></a></li></ul><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.ThreadPool" href="#ThreadPools.ThreadPool"><code>ThreadPools.ThreadPool</code></a> — <span class="docstring-category">Type</span></header><section><div><pre><code class="language-julia">ThreadPool(allow_primary=false)</code></pre><p>The main ThreadPool object. Its API mimics that of a <code>Channel{Task}</code>, but each submitted task is executed on a different thread.  If <code>allow_primary</code> is true,  the assigned thread might be the primary, which will interfere with future  thread management for the duration of any heavy-computational (blocking) processes.  If it is false, all assigned threads will be off of the primary. Each thread will only be allowed one Task at a time, but each thread will  backfill with the next queued Task immediately on completion of the previous, without regard to how bust the other threads may be.  </p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/pool.jl#L5-L16">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Base.put!-Tuple{ThreadPool,Task}" href="#Base.put!-Tuple{ThreadPool,Task}"><code>Base.put!</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">Base.put!(pool::ThreadPool, t::Task)</code></pre><p>Put the task <code>t</code> into the pool, blocking until the pool has an available thread.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/pool.jl#L49-L54">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Base.put!-Tuple{ThreadPool,Function,Vararg{Any,N} where N}" href="#Base.put!-Tuple{ThreadPool,Function,Vararg{Any,N} where N}"><code>Base.put!</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">Base.put!(pool::ThreadPool, fn::Function, args...)
-Base.put!(fn::Function, pool::ThreadPool, args...)</code></pre><p>Creates a task that runs <code>fn(args...)</code> and adds it to the pool, blocking  until the pool has an available thread.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/pool.jl#L61-L67">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Base.take!-Tuple{ThreadPool}" href="#Base.take!-Tuple{ThreadPool}"><code>Base.take!</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">Base.take!(pool::ThreadPool) -&gt; Task</code></pre><p>Takes the next available completed task from the pool, blocking until a task is available.  </p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/pool.jl#L72-L77">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Base.close-Tuple{ThreadPool}" href="#Base.close-Tuple{ThreadPool}"><code>Base.close</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">Base.close(pool::ThreadPool)</code></pre><p>Shuts down the pool, closing the internal thread handlers.  It is safe to issue this command after all Tasks have been submitted, regardless of the Task completion status. If issued while the pool is still active, it  will <code>yield</code> until all tasks have been completed. </p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/pool.jl#L81-L88">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.isactive-Tuple{ThreadPool}" href="#ThreadPools.isactive-Tuple{ThreadPool}"><code>ThreadPools.isactive</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">ThreadPools.isactive(pool::ThreadPool)</code></pre><p>Returns <code>true</code> if there are queued Tasks anywhere in the pool, either awaiting execution, executing, or waiting to be retrieved.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/pool.jl#L110-L115">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.results-Tuple{ThreadPool}" href="#ThreadPools.results-Tuple{ThreadPool}"><code>ThreadPools.results</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">results(pool::ThreadPool) -&gt; result iterator</code></pre><p>Returns an iterator over the <code>fetch</code>ed results of the pooled tasks.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; pool = ThreadPool();
+       end;
+(1, 1)
+(3, 2)
+(7, 4)
+(5, 3)
+(8, 4)
+(4, 2)
+(2, 1)
+(6, 3)
+
+julia&gt; result&#39;
+1×8 LinearAlgebra.Adjoint{Int64,Array{Int64,1}}:
+1  4  9  16  25  36  49  64
+
+julia&gt; plot(pool)</code></pre><p>Note that while the execution order is not guaranteed, the result order is.  Also note that the primary thread is used.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/simplefuncs.jl#L130-L161">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.logbmap-Tuple{Any,Any}" href="#ThreadPools.logbmap-Tuple{Any,Any}"><code>ThreadPools.logbmap</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">logbmap(fn::Function, itr) -&gt; (pool, collection)</code></pre><p>Mimics <code>Base.map</code>, but launches the function evaluations onto all available  threads except the primary, using a pre-assigned scheduling strategy  appropriate for uniform task durations.  Also returns a logged pool that can  be analyzed with the logging functions and <code>plot</code>ted.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; (pool, result) = logbmap(1:8) do x
+         println((x,Threads.threadid()))
+         x^2
+       end;
+(1, 2)
+(6, 4)
+(3, 3)
+(7, 4)
+(2, 2)
+(4, 3)
+(8, 4)
+(5, 3)
+
+julia&gt; result&#39;
+1×8 LinearAlgebra.Adjoint{Int64,Array{Int64,1}}:
+1  4  9  16  25  36  49  64
+
+julia&gt; plot(pool)</code></pre><p>Note that while the execution order is not guaranteed, the result order is,  Also note that the primary thread is not used.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/simplefuncs.jl#L170-L201">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.logqmap-Tuple{Any,Any}" href="#ThreadPools.logqmap-Tuple{Any,Any}"><code>ThreadPools.logqmap</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">logqmap(fn::Function, itr) -&gt; (pool, collection)</code></pre><p>Mimics <code>Base.map</code>, but launches the function evaluations onto all available  threads, using a queued scheduling strategy appropriate for nonuniform task durations.  Also returns a logged pool that can be analyzed with the  logging functions and <code>plot</code>ted.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; (pool, result) = logqmap(1:8) do x
+         println((x,Threads.threadid()))
+         x^2
+        end;
+(3, 3)
+(4, 4)
+(2, 2)
+(5, 3)
+(7, 2)
+(6, 4)
+(8, 3)
+(1, 1)
+
+julia&gt; result&#39;
+1×8 LinearAlgebra.Adjoint{Int64,Array{Int64,1}}:
+1  4  9  16  25  36  49  64
+
+julia&gt; plot(pool)</code></pre><p>Note that while the execution order is not guaranteed, the result order is.  Also note that the primary thread is used.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/simplefuncs.jl#L210-L241">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.logqbmap-Tuple{Any,Any}" href="#ThreadPools.logqbmap-Tuple{Any,Any}"><code>ThreadPools.logqbmap</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">logqbmap(fn::Function, itr) -&gt; (pool, collection)</code></pre><p>Mimics <code>Base.map</code>, but launches the function evaluations onto all available  threads except the primary, using a queued scheduling strategy appropriate  for nonuniform task durations.  Also returns a logged pool that can be  analyzed with the logging functions and <code>plot</code>ted.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; (pool, result) = logqbmap(1:8) do x
+         println((x,Threads.threadid()))
+         x^2
+       end;
+(3, 3)
+(2, 4)
+(1, 2)
+(4, 3)
+(5, 4)
+(6, 2)
+(7, 3)
+(8, 4)
+
+julia&gt; result&#39;
+1×8 LinearAlgebra.Adjoint{Int64,Array{Int64,1}}:
+1  4  9  16  25  36  49  64
+
+julia&gt; plot(pool)</code></pre><p>Note that while the execution order is not guaranteed, the result order is,  Also note that the primary thread is not used.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/simplefuncs.jl#L250-L281">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.logpforeach-Tuple{Function,Any}" href="#ThreadPools.logpforeach-Tuple{Function,Any}"><code>ThreadPools.logpforeach</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">logpforeach(fn::Function, itr) -&gt; pool</code></pre><p>Mimics <code>Base.foreach</code>, but launches the function evaluations onto all available  threads, using a pre-assigned scheduling strategy appropriate for uniform task durations.  Returns a logged pool that can be analyzed with  the logging functions and <code>plot</code>ted.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; pool = logpforeach(x -&gt; println((x,Threads.threadid())), 1:8);
+(1, 1)
+(3, 2)
+(7, 4)
+(2, 1)
+(4, 2)
+(5, 3)
+(8, 4)
+(6, 3)
+
+julia&gt; plot(pool)</code></pre><p>Note that the execution order is not guaranteed, and that the primary thread  is used.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/simplefuncs.jl#L411-L435">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.logbforeach-Tuple{Any,Any}" href="#ThreadPools.logbforeach-Tuple{Any,Any}"><code>ThreadPools.logbforeach</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">logbforeach(fn::Function, itr)</code></pre><p>Mimics <code>Base.foreach</code>, but launches the function evaluations onto all available  threads except the primary, using a pre-assigned scheduling strategy appropriate  for uniform task durations.  Returns a logged pool that can be analyzed with  the logging functions and <code>plot</code>ted.    </p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; pool = logbforeach(x -&gt; println((x,Threads.threadid())), 1:8);
+(1, 2)
+(3, 3)
+(6, 4)
+(4, 3)
+(2, 2)
+(7, 4)
+(5, 3)
+(8, 4)
+
+julia&gt; plot(pool)</code></pre><p>Note that the execution order is not guaranteed, and that the primary thread  is not used.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/simplefuncs.jl#L444-L468">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.logqforeach-Tuple{Any,Any}" href="#ThreadPools.logqforeach-Tuple{Any,Any}"><code>ThreadPools.logqforeach</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">logqforeach(fn::Function, itr)</code></pre><p>Mimics <code>Base.foreach</code>, but launches the function evaluations onto all available  threads, using a queued scheduling strategy appropriate for nonuniform task durations.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; pool = logqforeach(x -&gt; println((x,Threads.threadid())), 1:8);
+(2, 4)
+(3, 3)
+(4, 2)
+(5, 4)
+(6, 3)
+(7, 2)
+(8, 4)
+(1, 1)
+
+julia&gt; plot(pool)</code></pre><p>Note that the execution order is not guaranteed, and that the primary thread  is used.  Returns a logged pool that can be analyzed with the logging functions  and <code>plot</code>ted.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/simplefuncs.jl#L477-L501">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.logqbforeach-Tuple{Any,Any}" href="#ThreadPools.logqbforeach-Tuple{Any,Any}"><code>ThreadPools.logqbforeach</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">logqbforeach(fn::Function, itr)</code></pre><p>Mimics <code>Base.foreach</code>, but launches the function evaluations onto all available  threads except the primary, using a queued scheduling strategy appropriate for  nonuniform task durations.  Returns a logged pool that can be analyzed with the  logging functions and <code>plot</code>ted.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; pool = logqbforeach(x -&gt; println((x,Threads.threadid())), 1:8);
+(2, 2)
+(1, 3)
+(3, 4)
+(4, 2)
+(5, 3)
+(6, 4)
+(7, 2)
+(8, 3)
+
+julia&gt; plot(pool)</code></pre><p>Note that the execution order is not guaranteed, and that the primary thread  is not used.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/simplefuncs.jl#L510-L534">source</a></section></article><h2 id="Composable-API-1"><a class="docs-heading-anchor" href="#Composable-API-1">Composable API</a><a class="docs-heading-anchor-permalink" href="#Composable-API-1" title="Permalink"></a></h2><h3 id="Functions-1"><a class="docs-heading-anchor" href="#Functions-1">Functions</a><a class="docs-heading-anchor-permalink" href="#Functions-1" title="Permalink"></a></h3><p>The above macros invoke two base structures, <a href="#ThreadPools.StaticPool-Tuple{}"><code>ThreadPools.StaticPool</code></a> and  <a href="#ThreadPools.QueuePool-Tuple{}"><code>ThreadPools.QueuePool</code></a>, each of which can be assigned to a subset of the  available threads.  This allows for composition with the <code>pwith</code> and <code>@pthreads</code>  commands, and usage in more complex scenarios, such as stack processing.</p><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.pwith-Tuple{Function,Any}" href="#ThreadPools.pwith-Tuple{Function,Any}"><code>ThreadPools.pwith</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">pwith(fn::Function, pool) -&gt; pool</code></pre><p>Apply the functon <code>fn</code> to the provided pool and close the pool.  Returns the  closed pool for any desired analysis or plotting. </p><p><strong>Example</strong></p><pre><code class="language-none">julia&gt; pwith(ThreadPools.QueuePool(1,2)) do pool
+         pforeach(pool, x -&gt; println((x,Threads.threadid())), 1:8)
+       end;
+(2, 2)
+(1, 1)
+(3, 2)
+(4, 1)
+(5, 2)
+(6, 1)
+(7, 2)
+(8, 1)</code></pre><p>Note in the above example, only two threads were used, as set by the  <code>QueuePool</code> setting.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/interface.jl#L77-L99">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.@pthreads" href="#ThreadPools.@pthreads"><code>ThreadPools.@pthreads</code></a> — <span class="docstring-category">Macro</span></header><section><div><pre><code class="language-julia">@pthreads pool</code></pre><p>Mimic the <code>Base.Threads.@threads</code> macro, but uses the provided pool to  assign the tasks.</p><p><strong>Example</strong></p><pre><code class="language-none">julia&gt; pwith(ThreadPools.QueuePool(1,2)) do pool
+         @pthreads pool for x in 1:8
+           println((x,Threads.threadid()))
+         end
+       end;
+(2, 2)
+(3, 2)
+(1, 1)
+(4, 2)
+(5, 1)
+(6, 2)
+(8, 2)
+(7, 1)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/interface.jl#L107-L129">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.pmap-Tuple{Function,Any,Any}" href="#ThreadPools.pmap-Tuple{Function,Any,Any}"><code>ThreadPools.pmap</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">pmap(pool, fn::Function, itr)
+pmap(fn::Function, pool, itr)</code></pre><p>Mimics <code>Base.map</code>, but launches the function evaluations onto the provided  pool to assign the tasks.</p><p><strong>Example</strong></p><pre><code class="language-none">julia&gt; pool = pwith(ThreadPools.LoggedQueuePool(1,2)) do pool
+         pmap(pool, 1:8) do x
+           println((x,Threads.threadid()))
+         end
+       end;
+(2, 2)
+(1, 1)
+(3, 2)
+(4, 1)
+(5, 2)
+(6, 1)
+(7, 2)
+(8, 1)
+
+julia&gt; plot(pool)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/interface.jl#L46-L71">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.pforeach-Tuple{Any,Function,AbstractArray{T,1} where T}" href="#ThreadPools.pforeach-Tuple{Any,Function,AbstractArray{T,1} where T}"><code>ThreadPools.pforeach</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">pforeach(pool, fn::Function, itr)
+pforeach(fn::Function, pool, itr)</code></pre><p>Mimics <code>Base.foreach</code>, but launches the function evaluations onto the provided  pool to assign the tasks.</p><p><strong>Example</strong></p><pre><code class="language-none">julia&gt; pool = pwith(ThreadPools.LoggedQueuePool(1,2)) do pool
+         pforeach(pool,  x -&gt; println((x,Threads.threadid())), 1:8)
+       end;
+(2, 2)
+(1, 1)
+(3, 2)
+(5, 2)
+(4, 1)
+(6, 2)
+(7, 1)
+(8, 2)
+
+julia&gt; plot(pool)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/interface.jl#L8-L31">source</a></section></article><h3 id="AbstractThreadPool-1"><a class="docs-heading-anchor" href="#AbstractThreadPool-1">AbstractThreadPool</a><a class="docs-heading-anchor-permalink" href="#AbstractThreadPool-1" title="Permalink"></a></h3><article class="docstring"><header><a class="docstring-binding" id="Base.close-Tuple{ThreadPools.StaticPool}" href="#Base.close-Tuple{ThreadPools.StaticPool}"><code>Base.close</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">Base.close(pool::AbstractThreadPool)</code></pre><p>Closes the pool, shuts down any handlers and finalizes any logging activities. </p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/interface.jl#L162-L166">source</a></section></article><h3 id="StaticPools-1"><a class="docs-heading-anchor" href="#StaticPools-1">StaticPools</a><a class="docs-heading-anchor-permalink" href="#StaticPools-1" title="Permalink"></a></h3><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.StaticPool-Tuple{}" href="#ThreadPools.StaticPool-Tuple{}"><code>ThreadPools.StaticPool</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">StaticPool(init_thrd=1, nthrds=Threads.nthreads())</code></pre><p>The main StaticPool object.   </p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/staticpool.jl#L16-L20">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.LoggedStaticPool-Tuple{}" href="#ThreadPools.LoggedStaticPool-Tuple{}"><code>ThreadPools.LoggedStaticPool</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">LoggedStaticPool(init_thrd=1, nthrds=Threads.nthreads())</code></pre><p>The main LoggedStaticPool object.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/logstaticpool.jl#L19-L23">source</a></section></article><h3 id="QueuePools-1"><a class="docs-heading-anchor" href="#QueuePools-1">QueuePools</a><a class="docs-heading-anchor-permalink" href="#QueuePools-1" title="Permalink"></a></h3><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.QueuePool-Tuple{}" href="#ThreadPools.QueuePool-Tuple{}"><code>ThreadPools.QueuePool</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">QueuePool(init_thrd=1, nthrds=Threads.nthreads())</code></pre><p>The main QueuePool object. Its API mimics that of a <code>Channel{Task}</code>, but each submitted task is executed on a different thread.  If <code>allow_primary</code> is true,  the assigned thread might be the primary, which will interfere with future  thread management for the duration of any heavy-computational (blocking) processes.  If it is false, all assigned threads will be off of the primary. Each thread will only be allowed one Task at a time, but each thread will  backfill with the next queued Task immediately on completion of the previous, without regard to how bust the other threads may be.  </p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/qpool.jl#L40-L51">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.LoggedQueuePool-Tuple{}" href="#ThreadPools.LoggedQueuePool-Tuple{}"><code>ThreadPools.LoggedQueuePool</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">LoggedQueuePool(init_thrd=1, nthrds=Threads.nthreads())</code></pre><p>The main LoggedQueuePool object. Its API mimics that of a <code>Channel{Task}</code>, but each submitted task is executed on a different thread.  If <code>allow_primary</code> is true,  the assigned thread might be the primary, which will interfere with future  thread management for the duration of any heavy-computational (blocking) processes.  If it is false, all assigned threads will be off of the primary. Each thread will only be allowed one Task at a time, but each thread will  backfill with the next queued Task immediately on completion of the previous, without regard to how bust the other threads may be.</p><p>The API for the <code>LoggedQueuePool</code> is Identical to that for <a href="#ThreadPools.QueuePool-Tuple{}"><code>QueuePool</code></a>.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/logqpool.jl#L54-L67">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Base.put!-Tuple{ThreadPools.QueuePool,Task}" href="#Base.put!-Tuple{ThreadPools.QueuePool,Task}"><code>Base.put!</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">Base.put!(pool::QueuePool, t::Task)</code></pre><p>Put the task <code>t</code> into the pool, blocking until the pool has an available thread.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/qpool.jl#L64-L69">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Base.put!-Tuple{ThreadPools.QueuePool,Function,Vararg{Any,N} where N}" href="#Base.put!-Tuple{ThreadPools.QueuePool,Function,Vararg{Any,N} where N}"><code>Base.put!</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">Base.put!(pool::QueuePool, fn::Function, args...)
+Base.put!(fn::Function, pool::QueuePool, args...)</code></pre><p>Creates a task that runs <code>fn(args...)</code> and adds it to the pool, blocking  until the pool has an available thread.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/qpool.jl#L76-L82">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Base.take!-Tuple{ThreadPools.QueuePool}" href="#Base.take!-Tuple{ThreadPools.QueuePool}"><code>Base.take!</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">Base.take!(pool::QueuePool) -&gt; Task</code></pre><p>Takes the next available completed task from the pool, blocking until a task is available.  </p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/qpool.jl#L87-L92">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Base.iterate-Tuple{ThreadPools.QueuePool,Any}" href="#Base.iterate-Tuple{ThreadPools.QueuePool,Any}"><code>Base.iterate</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">Base.iterate(pool::QueuePool[, state])</code></pre><p>Iterates over the completed Tasks, grabbing the next one available and ending when the pool has been <code>close</code>ed.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/qpool.jl#L114-L119">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.results-Tuple{ThreadPools.QueuePool}" href="#ThreadPools.results-Tuple{ThreadPools.QueuePool}"><code>ThreadPools.results</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">results(pool::QueuePool) -&gt; result iterator</code></pre><p>Returns an iterator over the <code>fetch</code>ed results of the pooled tasks.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; pool = QueuePool();
 
 julia&gt; @async begin
          for i in 1:4
@@ -138,47 +346,4 @@ julia&gt; for r in results(pool)
 6
 2
 4
-8</code></pre><p>Note that the execution order across the threads is not guaranteed.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/pool.jl#L128-L154">source</a></section></article><h1 id="Logging-API-1"><a class="docs-heading-anchor" href="#Logging-API-1">Logging API</a><a class="docs-heading-anchor-permalink" href="#Logging-API-1" title="Permalink"></a></h1><p>For performance tuning, it can be useful to substitute in a logger that can be used to analyze the thread activity.  <code>LoggingThreadPool</code> is provided for this purpose.</p><ul><li><a href="#ThreadPools.logbgforeach"><code>ThreadPools.logbgforeach</code></a></li><li><a href="#ThreadPools.logbgmap"><code>ThreadPools.logbgmap</code></a></li><li><a href="#ThreadPools.@logbgthreads"><code>ThreadPools.@logbgthreads</code></a></li><li><a href="#ThreadPools.logfgforeach"><code>ThreadPools.logfgforeach</code></a></li><li><a href="#ThreadPools.logfgmap"><code>ThreadPools.logfgmap</code></a></li><li><a href="#ThreadPools.@logfgthreads"><code>ThreadPools.@logfgthreads</code></a></li><li><a href="#ThreadPools.@logthreads-Tuple{Any}"><code>ThreadPools.@logthreads</code></a></li><li><a href="#ThreadPools.readlog"><code>ThreadPools.readlog</code></a></li><li><a href="#ThreadPools.showstats"><code>ThreadPools.showstats</code></a></li><li><a href="#ThreadPools.showactivity"><code>ThreadPools.showactivity</code></a></li><li><a href="#ThreadPools.LoggingThreadPool"><code>ThreadPools.LoggingThreadPool</code></a></li></ul><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.logbgforeach" href="#ThreadPools.logbgforeach"><code>ThreadPools.logbgforeach</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">ThreadPools.logbgforeach(fn, io, itrs...) -&gt; Nothing</code></pre><p>Mimics <a href="#ThreadPools.bgforeach-Tuple{Any,Any}"><code>bgforeach</code></a>, but with a log that can be analyzed with  <a href="#ThreadPools.readlog"><code>readlog</code></a>.  If <code>io</code> is a string, a file will be opened with that name and used as the log.</p><p>!! note     This function cannot be used with Threads.nthreads() == 1, and will     throw an error if this is tried.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/logfunctions.jl#L5-L15">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.logbgmap" href="#ThreadPools.logbgmap"><code>ThreadPools.logbgmap</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">ThreadPools.logbgmap(fn, io, itrs...) -&gt; Nothing</code></pre><p>Mimics <a href="#ThreadPools.bgmap-Tuple{Any,Any}"><code>bgmap</code></a>, but with a log that can be analyzed with  <a href="#ThreadPools.readlog"><code>readlog</code></a>.  If <code>io</code> is a string, a file will be opened with that name and used as the log.</p><p>!! note     This function cannot be used with Threads.nthreads() == 1, and will     throw an error if this is tried.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/logfunctions.jl#L51-L61">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.@logbgthreads" href="#ThreadPools.@logbgthreads"><code>ThreadPools.@logbgthreads</code></a> — <span class="docstring-category">Macro</span></header><section><div><pre><code class="language-julia">ThreadPools.@logbgthreads io</code></pre><p>Mimics <a href="#ThreadPools.@bgthreads"><code>@bgthreads</code></a>, but with a log that can be analyzed with  <a href="#ThreadPools.readlog"><code>readlog</code></a>.  If <code>io</code> is a string, a file will be opened with that name and used as the log.</p><p>!! note     This function cannot be used with Threads.nthreads() == 1, and will     throw an error if this is tried.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/logfunctions.jl#L97-L107">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.logfgforeach" href="#ThreadPools.logfgforeach"><code>ThreadPools.logfgforeach</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">ThreadPools.logfgforeach(fn, io, itrs...) -&gt; Nothing</code></pre><p>Mimics <a href="#ThreadPools.fgforeach-Tuple{Any,Any}"><code>fgforeach</code></a>, but with a log that can be analyzed with  <a href="#ThreadPools.readlog"><code>readlog</code></a>.  If <code>io</code> is a string, a file will be opened with that name and used as the log.</p><p>!! note     This function cannot be used with Threads.nthreads() == 1, and will     throw an error if this is tried.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/logfunctions.jl#L28-L38">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.logfgmap" href="#ThreadPools.logfgmap"><code>ThreadPools.logfgmap</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">ThreadPools.logfgmap(fn, io, itrs...) -&gt; Nothing</code></pre><p>Mimics <a href="#ThreadPools.fgmap-Tuple{Any,Any}"><code>fgmap</code></a>, but with a log that can be analyzed with  <a href="#ThreadPools.readlog"><code>readlog</code></a>.  If <code>io</code> is a string, a file will be opened with that name and used as the log.</p><p>!! note     This function cannot be used with Threads.nthreads() == 1, and will     throw an error if this is tried.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/logfunctions.jl#L74-L84">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.@logfgthreads" href="#ThreadPools.@logfgthreads"><code>ThreadPools.@logfgthreads</code></a> — <span class="docstring-category">Macro</span></header><section><div><pre><code class="language-julia">ThreadPools.@logfgthreads io</code></pre><p>Mimics <a href="#ThreadPools.@fgthreads"><code>@fgthreads</code></a>, but with a log that can be analyzed with  <a href="#ThreadPools.readlog"><code>readlog</code></a>.  If <code>io</code> is a string, a file will be opened with that name and used as the log.</p><p>!! note     This function cannot be used with Threads.nthreads() == 1, and will     throw an error if this is tried.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/logfunctions.jl#L136-L146">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.@logthreads-Tuple{Any}" href="#ThreadPools.@logthreads-Tuple{Any}"><code>ThreadPools.@logthreads</code></a> — <span class="docstring-category">Macro</span></header><section><div><pre><code class="language-julia">ThreadPools.@logthreads io</code></pre><p>Mimics  <a href="(https://docs.julialang.org/en/v1/base/multi-threading/#Base.Threads.@threads)"><code>Base.Threads.@threads</code></a>, but with a log that can be analyzed with <a href="#ThreadPools.readlog"><code>readlog</code></a> to help tune  performance.  If <code>io</code> is a string, a file will be opened with that name and  used as the log.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/logfunctions.jl#L175-L183">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.readlog" href="#ThreadPools.readlog"><code>ThreadPools.readlog</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">ThreadPools.readlog(io) -&gt; Dict of (thread # =&gt; job list)</code></pre><p>Analyzes the output of a <a href="#ThreadPools.LoggingThreadPool"><code>LoggingThreadPool</code></a> and produces the history of each job on each thread.  </p><p>Each job in the job list is a struct of:</p><pre><code class="language-none">struct Job
-    id    :: Int
-    tid   :: Int
-    start :: Float64
-    stop  :: Float64
-end</code></pre><p>The default sorting order of the jobs in each thread are by stop time.  <code>io</code> can either be an IO object or a filename. </p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; log = ThreadPools.readlog(&quot;mylog.txt&quot;)
-Dict{Int64,Array{ThreadPools.Job,1}} with 3 entries:
-  4 =&gt; ThreadPools.Job[Job(3, 4, 0.016, 0.327), Job(6, 4, 0.327, 0.928)]
-  2 =&gt; ThreadPools.Job[Job(2, 2, 0.016, 0.233), Job(5, 2, 0.233, 0.749)]
-  3 =&gt; ThreadPools.Job[Job(1, 3, 0.016, 0.139), Job(4, 3, 0.139, 0.546)]</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/logpool.jl#L74-L100">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.showstats" href="#ThreadPools.showstats"><code>ThreadPools.showstats</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">ThreadPools.showstats([io, ]log)</code></pre><p>Produces a statistical analysis of the provided log.</p><p><strong>Example</strong></p><pre><code class="language-julia">julia&gt; ThreadPools.showstats(&quot;mylog.txt&quot;)
-
-    Total duration: 1.542 s
-    Number of jobs: 8
-    Average job duration: 0.462 s
-    Minimum job duration: 0.111 s
-    Maximum job duration: 0.82 s
-
-    Thread 2: Duration 1.542 s, Gap time 0.0 s
-    Thread 3: Duration 1.23 s, Gap time 0.0 s
-    Thread 4: Duration 0.925 s, Gap time 0.0 s
-</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/logpool.jl#L210-L230">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.showactivity" href="#ThreadPools.showactivity"><code>ThreadPools.showactivity</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">ThreadPools.showactivity([io, ]log, dt, t0=0, t1=Inf; nthreads=Threads.nthreads())</code></pre><p>Produces a textual graph of the thread activity in the provided log.</p><p>The format of the output is</p><pre><code class="language-julia">julia&gt; ThreadPools.showactivity(&quot;mylog.txt&quot;, 0.1)
-0.000   -   -   -   -
-0.100   4   2   1   3
-0.200   4   2   5   3
-0.300   4   6   5   3
-0.400   4   6   5   7
-0.500   8   6   5   7
-0.600   8   6   5   7
-0.700   8   6   -   7
-0.800   8   6   -   7
-0.900   8   -   -   7
-1.000   8   -   -   7
-1.100   8   -   -   -
-1.200   8   -   -   -
-1.300   -   -   -   -
-1.400   -   -   -   -</code></pre><p>where the first column is time, and each column afterwards is the active job id in each thread (threads 1:nthreads, left to right) at that point in time.</p><p>If <code>io</code> is provided, the output will be written there.  <code>log</code> may be a log IO  object, or a filename to be opened and read.  <code>dt</code> is the time step for each row, <code>t0</code> is the optional starting time, <code>t1</code> the optional stopping  time, and <code>nthreads</code> is the number of threads to print.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/logpool.jl#L154-L187">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.LoggingThreadPool" href="#ThreadPools.LoggingThreadPool"><code>ThreadPools.LoggingThreadPool</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">ThreadPools.LoggingThreadPool(io, allow_primary=false)</code></pre><p>A ThreadPool that will index and log the start/stop times of each Task <code>put</code> into the pool.  The log format is:</p><pre><code class="language-none">522 3 S 7.932999849319458
-523 4 S 7.932999849319458
-522 3 P 8.823155343098272
-  ^ ^ ^ ^
-  | | | |
-  | | | Time
-  | | S=Start, P=Stop 
-  | Thread ID
- Job #</code></pre><p>and is parsed by the <a href="#ThreadPools.readlog"><code>readlog</code></a> and <a href="#ThreadPools.showactivity"><code>showactivity</code></a> commands.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/29b6c81196f98f5df9f1245cb0dbf5b0a342865f/src/logpool.jl#L15-L33">source</a></section></article></article></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 20 January 2020 07:00">Monday 20 January 2020</span>. Using Julia version 1.3.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+8</code></pre><p>Note that the execution order across the threads is not guaranteed.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/qpool.jl#L143-L169">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="ThreadPools.isactive-Tuple{ThreadPools.QueuePool}" href="#ThreadPools.isactive-Tuple{ThreadPools.QueuePool}"><code>ThreadPools.isactive</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">ThreadPools.isactive(pool::QueuePool)</code></pre><p>Returns <code>true</code> if there are queued Tasks anywhere in the pool, either awaiting execution, executing, or waiting to be retrieved.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/tro3/ThreadPools.jl/blob/0202d539722b6db89cf99ac3697837c0d682993e/src/qpool.jl#L125-L130">source</a></section></article></article></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 31 January 2020 14:29">Friday 31 January 2020</span>. Using Julia version 1.3.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

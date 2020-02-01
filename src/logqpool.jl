@@ -52,7 +52,7 @@ end
 #############################
 
 """
-    LoggedQueuePool(io, thrd0=1, nthrds=Threads.nthreads())
+    LoggedQueuePool(init_thrd=1, nthrds=Threads.nthreads())
 
 The main LoggedQueuePool object. Its API mimics that of a `Channel{Task}`, but each
 submitted task is executed on a different thread.  If `allow_primary` is true, 
@@ -61,10 +61,12 @@ thread management for the duration of any heavy-computational (blocking)
 processes.  If it is false, all assigned threads will be off of the primary.
 Each thread will only be allowed one Task at a time, but each thread will 
 backfill with the next queued Task immediately on completion of the previous,
-without regard to how bust the other threads may be.  
+without regard to how bust the other threads may be.
+
+The API for the `LoggedQueuePool` is Identical to that for [`QueuePool`](@ref).
 """
-function LoggedQueuePool(thrd0::Integer=1, nthrds::Integer=Threads.nthreads())
-    thrd0 = min(thrd0, Threads.nthreads())
+function LoggedQueuePool(init_thrd::Integer=1, nthrds::Integer=Threads.nthreads())
+    thrd0 = min(init_thrd, Threads.nthreads())
     thrd1 = min(thrd0+nthrds-1, Threads.nthreads())
     return LoggedQueuePool(thrd0:thrd1, _default_log_handler)
 end
@@ -151,6 +153,11 @@ isactive(pool::LoggedQueuePool) = isready(pool.inq) || isready(pool.outq) || poo
 # Result Iterator
 #############################
 
+"""
+    results(pool::LoggedQueuePool) -> result iterator
+
+Identical to [`results(pool::LoggedQueuePool)`](@ref).
+"""
 results(pool::LoggedQueuePool) = ResultIterator(pool)
 
 

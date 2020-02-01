@@ -14,13 +14,13 @@ end
 #############################
 
 """
-    StaticPool(thrd0=1, nthrds=Threads.nthreads())
+    StaticPool(init_thrd=1, nthrds=Threads.nthreads())
 
 The main StaticPool object.   
 """
-function StaticPool(thrd0::Integer=1, nthrds::Integer=Threads.nthreads())
-    thrd0 = min(thrd0, Threads.nthreads())
-    thrd1 = min(thrd0+nthrds-1, Threads.nthreads())
+function StaticPool(init_thrd::Integer=1, nthrds::Integer=Threads.nthreads())
+    thrd0 = min(init_thrd, Threads.nthreads())
+    thrd1 = min(init_thrd+nthrds-1, Threads.nthreads())
     return StaticPool(thrd0:thrd1)
 end
 
@@ -34,11 +34,12 @@ function pmap(pool::StaticPool, fn::Function, itr)
     N = length(itr)
     result = Vector{_detect_type(fn, itr)}(undef, N)
     nts = length(pool.tids)
-    n = div(N,nts) + (N % nts > 0 ? 1 : 0)
+    n = div(N,nts)
+    r = N % nts
 
     _fn = (tind) -> begin
-        n0 = (tind-1)*n + 1
-        n1 = tind == nts ? N : tind*n
+        n0 = (tind-1)*n + 1 + (nts-tind+1 > r ? 0 : tind-nts+1)
+        n1 = n0-1 + n + (nts-tind+1 <= r ? 1 : 0)
         for i in n0:n1
             @inbounds result[i] = fn(Base.unsafe_getindex(itr, i))
         end
@@ -51,3 +52,5 @@ function pmap(pool::StaticPool, fn::Function, itr)
 
     return result
 end
+
+#

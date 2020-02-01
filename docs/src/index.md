@@ -1,56 +1,56 @@
-
-# ThreadPools.jl Documentation
+# ThreadPools.jl
 
 _Improved thread management for background and nonuniform tasks_
 
-A simple package that exposes a couple of macros that mimic 
-`Base.Threads.@threads`:
-[`@fgthreads`](@ref)
-and
-[`@bgthreads`](@ref).  
-Both macros use active thread management to keep all threads busy, even when 
-processing tasks with varying durations.  The `@fgthreads` uses all available 
-threads, while `@bgthreads` version keeps the tasks in the background.  There
-are also version of the `Base.map` and `Base.foreach` functions that behave 
-similarly:
-[`fgmap`](@ref),
-[`bgmap`](@ref),
-[`fgforeach`](@ref), 
-and
-[`bgforeach`](@ref), 
-as well as logging versions of all of the above and the original
-`@threads` macro for tuning purposes.
-
 ## Overview
 
-As of Julia 1.3, the algorithm of the `@threads` macro is to pre-divide the 
-incoming range into equal partitions running on each thread.  This is very 
-efficient for most use cases, but there are a couple of scenarios where
-this can present a problem:
+Documentation at https://tro3.github.io/ThreadPools.jl
 
-* When something else is running on the primary thread, like a GUI or a web 
-  server
-* When the tasks are very nonuniform, possibly leading to one thread working
-  on the longer tasks while the others sit idle
+ThreadPools.jl is a simple package that exposes a few macros and functions
+that mimic `Base.Threads.@threads`, `Base.map`, and `Base.foreach`. These 
+macros (and the underlying API) handle cases that the built-in functions are 
+not always well-suited for:
 
-ThreadPools is a simple package that exposes foreground and background variants
-of `@threads`, `map`, and `foreach` that actively manage the threads, starting 
-a new task when the previous one completes and in the case of the background 
-versions, keeping them off the primary thread.  The foreground versions are
-prepended with `fg` and background with `bg`, leading to:
+* A group of tasks that the user wants to keep off of the primary thread
+* A group of tasks that are very nonuniform in duration
 
-* [`@fgthreads`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.@fgthreads)
-* [`@bgthreads`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.@bgthreads)
-* [`fgmap`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.fgmap-Tuple{Any,Any})
-* [`bgmap`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.bgmap-Tuple{Any,Any})
-* [`fgforeach`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.fgforeach-Tuple{Any,Any})
-* [`bgforeach`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.bgforeach-Tuple{Any,Any})
+For the first case, ThreadPools exposes a `@bthreads` ("background threads") 
+macro that behaves identically to `Threads.@threads`, but keeps the
+primary thread job-free.  There are also related `bmap` and `bforeach`
+functions that mimic their `Base` counterparts, but with the same non-primary 
+thread usage.
 
-There are also versions of the above functions that will produce a task log to 
-help tune performance.  These are prepended with a `log` (for example,
-[`logbgmap`](https://tro3.github.io/ThreadPools.jl/build/index.html#ThreadPools.logbgmap)
-).  There are also a logging version of `Base.Threads.@threads` to compare with 
-and some analysis utilities included.
+For the second case, the package exposes a `@qthreads` ("queued threads") macro.  
+This macro uses a different scheduling strategy to help with nonuniform jobs.  
+`@threads` and `@bthreads` first divide the incoming job list into equal job 
+"chunks", then launch each 
+chunk on a separate thread for processing.  If the jobs are not uniform, this
+can lead to some long jobs all getting assigned to one thread, delaying 
+completion.  `@qthreads` does not pre-assign threads - it only starts a new 
+job as an old one finishes, so if a long job comes along, the other threads 
+will keep operating on the shorter ones.  `@qthreads` itself does use the 
+primary thread, but its cousin `@qbthreads` uses the same strategy but in the background.
+There are also `qmap`, `qforeach`, `qbmap`, and `qbforeach`.
+
+### Simple Macro/Function Selection
+
+|  Task Type           | Foreground (primary allowed)                                                          |  Background (primary forbidden)                                                          |
+|:-------------------- |:------------------------------------------------------------------------------------- |:---------------------------------------------------------------------------------------- |
+| **Uniform tasks**    | `Base.Threads.@threads` `ThreadPools.pmap(fn, itrs)` `ThreadPools.pforeach(fn, itrs)` | `ThreadPools.@bthreads` `ThreadPools.bmap(fn, itrs)` `ThreadPools.bforeach(fn, itrs)`    |
+| **Nonuniform tasks** | `ThreadPools.@qthreads` `ThreadPools.qmap(fn, itrs)` `ThreadPools.qforeach(fn, itrs)` | `ThreadPools.@qbthreads` `ThreadPools.qbmap(fn, itrs)` `ThreadPools.qbforeach(fn, itrs)` |
+
+
+### Job Logging for Performance Tuning
+
+Each of the above macros comes with a logging version that allows the user to 
+analyze the performance of the chosen strategy and thread count:
+
+| Task Type            | Foreground                                                                                     |  Background                                                                                       |
+| :------------------- |:---------------------------------------------------------------------------------------------- |:------------------------------------------------------------------------------------------------- |
+| **Uniform tasks**    | `ThreadPools.@logthreads` `ThreadPools.logpmap(fn, itrs)` `ThreadPools.logpforeach(fn, itrs)`  | `ThreadPools.@logbthreads` `ThreadPools.logbmap(fn, itrs)` `ThreadPools.logbforeach(fn, itrs)`    |
+| **Nonuniform tasks** | `ThreadPools.@logqthreads` `ThreadPools.logqmap(fn, itrs)` `ThreadPools.logqforeach(fn, itrs)` | `ThreadPools.@logqbthreads` `ThreadPools.logqbmap(fn, itrs)` `ThreadPools.logqbforeach(fn, itrs)` |
+
+Please see below for usage examples.
 
 ## Usage
 
@@ -58,14 +58,14 @@ Each of the simple API functions can be used like the `Base` versions of the
 same function: 
 
 ```julia
-julia> @bgthreads for x in 1:3
+julia> @qbthreads for x in 1:3
          println("$x $(Threads.threadid())")
        end
 2 3
 3 4
 1 2
 
-julia> bgmap([1,2,3]) do x
+julia> bmap([1,2,3]) do x
          println("$x $(Threads.threadid())")
          x^2
        end
@@ -77,106 +77,43 @@ julia> bgmap([1,2,3]) do x
  4
  9
 ```
-Note that while the execution order is not guaranteed across threads, but the 
-result of `bgmap` will of course match the input. For an example 
-of a more complex load-management scenario, see `examples/stackdemo.jl`.
-
+Note that both of the above examples use the background versions and no 
+threadid==1 is seen.  Also note that while the execution order is not 
+guaranteed across threads, but the result of `bmap` will of course match 
+the input. 
 
 ## Logger Usage
 
-The logging versions of the functions take either an IO for the log or a 
-filename to be created and used as the log.  The `readlog`, 
-`showstats`, and `showactivity` functions help visualize 
-the activity  (here, a 4-thread system using the primary with 
-`fgforeach`:
+The logging versions of the above functions all produce an `AbstractThreadPool` 
+object that has an in-memory log of the start and stop times of each job that 
+ran through the pool.  A `PlotRecipe` from `RecipesBase` is exposed in the 
+package, so all that is needed to generate a visualization of the job times is 
+the `plot` command from `Plots`.  In these plots, each job is shown by index,
+start time, and stop time and is given a color corresponding to its thread:
 
 ```julia
-julia> ThreadPools.logfgforeach(x -> sleep(0.1*x), "log.txt", 1:8)
+julia> using Plots
 
-julia> log = ThreadPools.readlog("log.txt")
-Dict{Int64,Array{ThreadPools.Job,1}} with 4 entries:
-  4 => ThreadPools.Job[Job(3, 4, 0.016, 0.328), Job(7, 4, 0.328, 1.039)]
-  2 => ThreadPools.Job[Job(2, 2, 0.016, 0.228), Job(6, 2, 0.228, 0.843)]
-  3 => ThreadPools.Job[Job(1, 3, 0.016, 0.128), Job(5, 3, 0.128, 0.629)]
-  1 => ThreadPools.Job[Job(4, 1, 0.016, 0.428), Job(8, 1, 0.428, 1.233)]
+julia> pool = logpforeach(x -> sleep(0.1*x), 1:8);
 
-julia> ThreadPools.showstats(log)
-
-    Total duration: 1.217 s
-    Number of jobs: 8
-    Average job duration: 0.46 s
-    Minimum job duration: 0.112 s
-    Maximum job duration: 0.805 s
-
-    Thread 1: Duration 1.217 s, Gap time 0.0 s
-    Thread 2: Duration 0.827 s, Gap time 0.0 s
-    Thread 3: Duration 0.613 s, Gap time 0.0 s
-    Thread 4: Duration 1.023 s, Gap time 0.0 s
-
-julia> ThreadPools.showactivity(log, 0.1)
-0.000   -   -   -   -
-0.100   4   2   1   3
-0.200   4   2   5   3
-0.300   4   6   5   3
-0.400   4   6   5   7
-0.500   8   6   5   7
-0.600   8   6   5   7
-0.700   8   6   -   7
-0.800   8   6   -   7
-0.900   8   -   -   7
-1.000   8   -   -   7
-1.100   8   -   -   -
-1.200   8   -   -   -
-1.300   -   -   -   -
-1.400   -   -   -   -
+julia> plot(pool)
 ```
+![pforeach plot](./img/staticlog.png)
 
-## Demonstrations
+```julia
+julia> pool = logqforeach(x -> sleep(0.1*x), 1:8);
 
-There are a couple of demonstrations in the `examples` directory.  `demo.jl` 
-shows how jobs are distributed across threads in both the `@threads` and 
-`@bgthreads` cases for various workload distributions.  Running these demos 
-is fairly simple (results below on 4 threads):
-
+julia> plot(pool)
 ```
-julia> include("examples/demo.jl")
-Main.Demo
-
-julia> Demo.run_with_outliers()
+![qforeach plot](img/qlog.png)
 
 
-@bgthreads, Active Job Per Thread on 200ms Intervals
-
-   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
-   0   6  14  25  29  31  31  40  49  52  62  68  73  83  89   0 100 105 109 109 109 109 109 109 132 137 141 147   0   0   0
-   0   8  15  20  30  33  33  33  50  57  63  66  66  84  90  94   0 104 108 112 116 121 123 127 131 134 134 134   0   0   0
-   0   9  12  24  24  24  35  38   0  56  61  69   0  82  91  95  98  98  98 113 117 120 120 120 120 135 142 146   0   0   0
-
-
-@threads, Active Job Per Thread on 200ms Intervals
-
-   0   4   6   9  10  12  15  16  20  24  24  24  28  29  31  31  32  33  33  34  37   0   0   0   0   0
-   0  43  46  50  52  54  56  60  62  65  66  66  68  70  73   0   0   0   0   0   0   0   0   0   0   0
-   0  79  82  84  87  90  92  94  96  98  98  98  98 100 101 104 106 108 109 109 109 109 109 110 112   0
-   0 117 119 120 120 120 120 121 124 127 131 133 134 134 134 137 141 143 146 149   0   0   0   0   0   0
-
-Speed increase using all threads (ideal 33.3%): 14.4%
-```
-These demos generate numbered jobs with a randomized work distribution that can 
-be varied.  There are normal, uniform,  and uniform with 10% outliers of 10x 
-distributions.  The activity graphs in these demos present time-sliced shapshots 
-of the thread activities, showing which job number was active in that time 
-slice.
-
-The available demos are:
-
-* `Demo.run_with_uniform()`
-* `Demo.run_with_variation()`
-* `Demo.run_with_outliers()`
-
-There is also a more complex demo at `examples/stackdemo.jl`.  Here, the 
-workload is heirarchal - each jobs produces a result and possibly more jobs. 
-The primary thread in this case is used purely more managing the job stack.
+Note the two different scheduling strategies are seen in the above plots. The 
+`pforeach` log shows that the jobs were assigned in order: 1 & 2 to 
+thread 1, 3 & 4 to thread 2, and so on.  The `qforeach` shows that each
+job (any thread) is started when the previous job on that thread completes.
+Because these jobs are very nonuniform (and stacked against the first
+strategy), this results in the pre-assign method taking 25% longer.
 
 
 ## Simple API
@@ -184,75 +121,98 @@ The primary thread in this case is used purely more managing the job stack.
 Each function of the simple API tries to mimic an existing function in `Base` 
 or `Base.Threads` to keep any code rework to a minimum.
 
-* [`bgforeach(fn, itr)`](@ref)
-* [`bgmap(fn, itr)`](@ref)
-* [`@bgthreads`](@ref)
-* [`fgforeach(fn, itr)`](@ref)
-* [`fgmap(fn, itr)`](@ref)
-* [`@fgthreads`](@ref)
+### Regular Versions
+
+* [`@bthreads`](@ref)
+* [`@qthreads`](@ref)
+* [`@qbthreads`](@ref)
+* [`pmap(fn, itr)`](@ref)
+* [`bmap(fn, itr)`](@ref)
+* [`qmap(fn, itr)`](@ref)
+* [`qbmap(fn, itr)`](@ref)
+* [`pforeach(fn, itr)`](@ref)
+* [`bforeach(fn, itr)`](@ref)
+* [`qforeach(fn, itr)`](@ref)
+* [`qbforeach(fn, itr)`](@ref)
+
+### Logging Versions
+
+* [`@logthreads`](@ref)
+* [`@logbthreads`](@ref)
+* [`@logqthreads`](@ref)
+* [`@logqbthreads`](@ref)
+* [`logpmap(fn, itr)`](@ref)
+* [`logbmap(fn, itr)`](@ref)
+* [`logqmap(fn, itr)`](@ref)
+* [`logqbmap(fn, itr)`](@ref)
+* [`logpforeach(fn, itr)`](@ref)
+* [`logbforeach(fn, itr)`](@ref)
+* [`logqforeach(fn, itr)`](@ref)
+* [`logqbforeach(fn, itr)`](@ref)
 
 ```@docs
-bgforeach(fn, itr)
-bgmap(fn, itr)
-@bgthreads
-fgforeach(fn, itr)
-fgmap(fn, itr)
-@fgthreads
+@bthreads
+@qthreads
+@qbthreads
+pmap(fn::Function, itr)
+bmap(fn, itr)
+qmap(fn, itr)
+qbmap(fn, itr)
+pforeach(fn::Function, itr)
+bforeach(fn, itr)
+qforeach(fn, itr)
+qbforeach(fn, itr)
+
+@logthreads
+@logbthreads
+@logqthreads
+@logqbthreads
+logpmap(fn::Function, itr)
+logbmap(fn, itr)
+logqmap(fn, itr)
+logqbmap(fn, itr)
+logpforeach(fn::Function, itr)
+logbforeach(fn, itr)
+logqforeach(fn, itr)
+logqbforeach(fn, itr)
 ```
 
-# ThreadPool API
+## Composable API
 
-The [`ThreadPool`](#ThreadPools.ThreadPool) mimics the `Channel{Task}` API, 
-where `put!`ting a `Task` causes it to be executed, and `take!` returns the 
-completed `Task`.  The `ThreadPool` is iterable over the completed `Task`s
-in the same way a `Channel` would be.
+### Functions
 
-* [`ThreadPools.ThreadPool`](@ref)
-* [`Base.put!(pool::ThreadPool, t::Task)`](#Base.put!(pool::ThreadPools.ThreadPool, t::Task))
-* [`Base.put!(pool::ThreadPool, fn::Function, args...)`](#Base.put!(pool::ThreadPools.ThreadPool, fn::Function, args...))
-* [`Base.take!(pool::ThreadPool, ind::Integer)`](#Base.take!(pool::ThreadPools.ThreadPool, ind::Integer))
-* [`Base.close(pool::ThreadPool)`](#Base.close(pool::ThreadPools.ThreadPool))
-* [`isactive(pool::ThreadPool)`](@ref)
-* [`results(pool::ThreadPool)`](@ref)
+The above macros invoke two base structures, [`ThreadPools.StaticPool`](@ref) and 
+[`ThreadPools.QueuePool`](@ref), each of which can be assigned to a subset of the 
+available threads.  This allows for composition with the `pwith` and `@pthreads` 
+commands, and usage in more complex scenarios, such as stack processing.
 
 ```@docs
-ThreadPools.ThreadPool
-Base.put!(pool::ThreadPools.ThreadPool, t::Task)
-Base.put!(pool::ThreadPools.ThreadPool, fn::Function, args...)
-Base.take!(pool::ThreadPools.ThreadPool)
-Base.close(pool::ThreadPools.ThreadPool)
-isactive(pool::ThreadPool)
-results(pool::ThreadPool)
+pwith(fn::Function, pool)
+@pthreads
+pmap(fn::Function, pool, itr)
+pforeach(pool, fn::Function, itr::AbstractVector)
 ```
 
-# Logging API
-
-For performance tuning, it can be useful to substitute in a logger that can be
-used to analyze the thread activity.  `LoggingThreadPool` is provided for this
-purpose.
-
-* [`ThreadPools.logbgforeach`](@ref)
-* [`ThreadPools.logbgmap`](@ref)
-* [`ThreadPools.@logbgthreads`](@ref)
-* [`ThreadPools.logfgforeach`](@ref)
-* [`ThreadPools.logfgmap`](@ref)
-* [`ThreadPools.@logfgthreads`](@ref)
-* [`ThreadPools.@logthreads`](@ref)
-* [`ThreadPools.readlog`](@ref)
-* [`ThreadPools.showstats`](@ref)
-* [`ThreadPools.showactivity`](@ref)
-* [`ThreadPools.LoggingThreadPool`](@ref)
-
+### AbstractThreadPool
 ```@docs
-ThreadPools.logbgforeach
-ThreadPools.logbgmap
-ThreadPools.@logbgthreads
-ThreadPools.logfgforeach
-ThreadPools.logfgmap
-ThreadPools.@logfgthreads
-ThreadPools.@logthreads io
-ThreadPools.readlog
-ThreadPools.showstats
-ThreadPools.showactivity
-ThreadPools.LoggingThreadPool
+Base.close(pool::ThreadPools.StaticPool)
+```
+
+### StaticPools
+```@docs
+ThreadPools.StaticPool()
+ThreadPools.LoggedStaticPool()
+```
+
+
+### QueuePools
+```@docs
+ThreadPools.QueuePool()
+ThreadPools.LoggedQueuePool()
+Base.put!(pool::ThreadPools.QueuePool, t::Task)
+Base.put!(pool::ThreadPools.QueuePool, fn::Function, args...)
+Base.take!(pool::ThreadPools.QueuePool)
+Base.iterate(pool::ThreadPools.QueuePool, state)
+results(pool::ThreadPools.QueuePool)
+isactive(pool::ThreadPools.QueuePool)
 ```

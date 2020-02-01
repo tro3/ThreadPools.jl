@@ -138,7 +138,7 @@ end
         end
 
         @test length(output) == 85
-        @test length(collect(keys(pool.log))) == Threads.nthreads()-1
+        @test length(collect(keys(pool.log))) == max(1, Threads.nthreads()-1)
         @test sum(length, values(pool.log)) == 85
 
     end
