@@ -1,3 +1,5 @@
+using Pkg
+Pkg.activate("..")
 using Documenter, ThreadPools
 
 push!(LOAD_PATH,"../src/")

@@ -32,6 +32,9 @@ will keep operating on the shorter ones.  `@qthreads` itself does use the
 primary thread, but its cousin `@qbthreads` uses the same strategy but in the background.
 There are also `qmap`, `qforeach`, `qbmap`, and `qbforeach`.
 
+The package also exposes a lower-level `@spawnat` macro that mimics the 
+`Base.Threads.@spawn` macro, for users who want to develop their own scheduling.
+
 ### Simple Macro/Function Selection
 
 |                      | Foreground (primary allowed) |  Background (primary forbidden) |
@@ -84,8 +87,14 @@ julia> bmap([1,2,3]) do x
  1
  4
  9
+
+julia> t = @spawnat 4 Threads.threadid()
+Task (runnable) @0x0000000010743c70
+
+julia> fetch(t)
+4
 ```
-Note that both of the above examples use the background versions and no 
+Note that the first two examples above use the background versions and no 
 threadid==1 is seen.  Also note that while the execution order is not 
 guaranteed across threads, but the result of `bmap` will of course match 
 the input. 
