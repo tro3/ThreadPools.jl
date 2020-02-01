@@ -33,7 +33,8 @@ primary thread, but its cousin `@qbthreads` uses the same strategy but in the ba
 There are also `qmap`, `qforeach`, `qbmap`, and `qbforeach`.
 
 The package also exposes a lower-level `@spawnat` macro that mimics the 
-`Base.Threads.@spawn` macro, for users who want to develop their own scheduling.
+`Base.Threads.@spawn` macro, but allows direct thread assignment for users who 
+want to develop their own scheduling.
 
 ### Simple Macro/Function Selection
 
@@ -115,7 +116,7 @@ julia> pool = logpforeach(x -> sleep(0.1*x), 1:8);
 
 julia> plot(pool)
 ```
-![pforeach plot](https://github.com/tro3/ThreadPools.jl/blob/docs/docs/src/staticlog.png "Log result from bforeach")
+![pforeach plot](https://tro3.github.io/ThreadPools.jl/build/img/staticlog.png)
 
 
 ```julia
@@ -123,7 +124,7 @@ julia> pool = logqforeach(x -> sleep(0.1*x), 1:8);
 
 julia> plot(pool)
 ```
-![qforeach plot](https://github.com/tro3/ThreadPools.jl/blob/docs/docs/src/qlog.png "Log result from qforeach")
+![qforeach plot](https://tro3.github.io/ThreadPools.jl/build/img/qlog.png)
 
 
 Note the two different scheduling strategies are seen in the above plots. The 

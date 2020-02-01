@@ -33,7 +33,8 @@ primary thread, but its cousin `@qbthreads` uses the same strategy but in the ba
 There are also `qmap`, `qforeach`, `qbmap`, and `qbforeach`.
 
 The package also exposes a lower-level `@spawnat` macro that mimics the 
-`Base.Threads.@spawn` macro, for users who want to develop their own scheduling.
+`Base.Threads.@spawn` macro, but allows direct thread assignment for users who want 
+to develop their own scheduling.
 
 
 ### Simple Macro/Function Selection
