@@ -20,8 +20,8 @@ primary thread job-free.  There are also related `bmap` and `bforeach`
 functions that mimic their `Base` counterparts, but with the same non-primary 
 thread usage.
 
-For the second case, the package exposes a `@qthreads` ("queued threads") macro.  
-This macro uses a different scheduling strategy to help with nonuniform jobs.  
+For the second case, the package exposes a `@qthreads` ("queued threads") macro. 
+This macro uses a different scheduling strategy to help with nonuniform jobs. 
 `@threads` and `@bthreads` first divide the incoming job list into equal job 
 "chunks", then launch each 
 chunk on a separate thread for processing.  If the jobs are not uniform, this
@@ -32,7 +32,7 @@ will keep operating on the shorter ones.  `@qthreads` itself does use the
 primary thread, but its cousin `@qbthreads` uses the same strategy but in the background.
 There are also `qmap`, `qforeach`, `qbmap`, and `qbforeach`.
 
-The package also exposes a lower-level `@spawnat` macro that mimics the 
+The package also exposes a lower-level `@pspawnat` macro that mimics the 
 `Base.Threads.@spawn` macro, but allows direct thread assignment for users who 
 want to develop their own scheduling.
 
@@ -89,7 +89,7 @@ julia> bmap([1,2,3]) do x
  4
  9
 
-julia> t = @spawnat 4 Threads.threadid()
+julia> t = @pspawnat 4 Threads.threadid()
 Task (runnable) @0x0000000010743c70
 
 julia> fetch(t)
