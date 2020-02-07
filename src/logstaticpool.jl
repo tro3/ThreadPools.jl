@@ -37,7 +37,7 @@ end
 # ThreadPool Interface
 #############################
 
-function pmap(pool::LoggedStaticPool, fn::Function, itr)::Vector{_detect_type(fn, itr)}
+function tmap(pool::LoggedStaticPool, fn::Function, itr)::Vector{_detect_type(fn, itr)}
     N = length(itr)
     sizehint!(pool.recs, N)
     result = Vector{_detect_type(fn, itr)}(undef, N)

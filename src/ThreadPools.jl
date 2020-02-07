@@ -2,12 +2,12 @@ module ThreadPools
 
 export @bthreads, @qthreads, @qbthreads
 export @logthreads, @logbthreads, @logqthreads, @logqbthreads
-export pwith, @pthreads, results, isactive, @pspawnat
+export pwith, @pthreads, results, isactive, @tspawnat
 export dumplog, readlog, showactivity, showstats
-export pmap, bmap, qmap, qbmap
-export logpmap, logbmap, logqmap, logqbmap
-export pforeach, bforeach, qforeach, qbforeach
-export logpforeach, logbforeach, logqforeach, logqbforeach
+export tmap, bmap, qmap, qbmap
+export logtmap, logbmap, logqmap, logqbmap
+export tforeach, bforeach, qforeach, qbforeach
+export logtforeach, logbforeach, logqforeach, logqbforeach
 
 include("interface.jl")
 include("logs.jl")

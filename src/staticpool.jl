@@ -30,7 +30,7 @@ end
 # ThreadPool Interface
 #############################
 
-function pmap(pool::StaticPool, fn::Function, itr)
+function tmap(pool::StaticPool, fn::Function, itr)
     N = length(itr)
     result = Vector{_detect_type(fn, itr)}(undef, N)
     nts = length(pool.tids)

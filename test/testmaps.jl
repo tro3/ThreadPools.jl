@@ -8,7 +8,7 @@ include("util.jl")
 
 @testset "maps" begin
 
-    @testset "pmap" begin
+    @testset "tmap" begin
         N = 2 * Threads.nthreads()
         objs = [TestObj(x) for x in 1:N]
         primary = Threads.nthreads() == 1
@@ -16,9 +16,9 @@ include("util.jl")
             Threads.threadid() == 1 && (primary = true)
             x.data
         end
-        @test pmap(fn!, objs) == collect(1:N)
+        @test tmap(fn!, objs) == collect(1:N)
         @test primary
-        @inferred pmap(fn!, objs)
+        @inferred tmap(fn!, objs)
     end
 
     @testset "bmap" begin
@@ -56,7 +56,7 @@ include("util.jl")
         @inferred qbmap(fn!, objs)
     end
 
-    @testset "logpmap" begin
+    @testset "logtmap" begin
         N = 2 * Threads.nthreads()
         objs = [TestObj(x) for x in 1:N]
         primary = Threads.nthreads() == 1
@@ -64,11 +64,11 @@ include("util.jl")
             Threads.threadid() == 1 && (primary = true)
             x.data
         end
-        p, r = logpmap(fn!, objs)
+        p, r = logtmap(fn!, objs)
         @test r == collect(1:N)
         @test length(p.recs) == N*2
         @test primary
-        @inferred logpmap(fn!, objs)
+        @inferred logtmap(fn!, objs)
     end
 
     @testset "logbmap" begin

@@ -1,6 +1,12 @@
 
+@deprecate pmap(fn::Function, itr) tmap(fn::Function, itr)
+@deprecate pforeach(fn::Function, itr) tforeach(fn::Function, itr)
+@deprecate logpmap(fn::Function, itr) logtmap(fn::Function, itr)
+@deprecate logpforeach(fn::Function, itr) logtforeach(fn::Function, itr)
+
+
 """
-    pmap(fn::Function, itr) -> collection
+    tmap(fn::Function, itr) -> collection
 
 Mimics `Base.map`, but launches the function evaluations onto all available 
 threads, using a pre-assigned scheduling strategy appropriate for uniform
@@ -8,7 +14,7 @@ task durations.
 
 # Example
 ```julia
-julia> pmap(x -> begin; println((x,Threads.threadid())); x^2; end, 1:8)'
+julia> tmap(x -> begin; println((x,Threads.threadid())); x^2; end, 1:8)'
 (7, 4)
 (5, 3)
 (8, 4)
@@ -23,10 +29,10 @@ julia> pmap(x -> begin; println((x,Threads.threadid())); x^2; end, 1:8)'
 Note that while the execution order is not guaranteed, the result order is. 
 Also note that the primary thread is used.
 """
-function pmap(fn::Function, itr)
+function tmap(fn::Function, itr)
     result = Vector{_detect_type(fn, itr)}()
     pool = StaticPool()
-    result = pmap(pool, fn, itr)
+    result = tmap(pool, fn, itr)
     close(pool)
     return result
 end
@@ -58,7 +64,7 @@ Also note that the primary thread is not used.
 function bmap(fn, itr)
     result = Vector{_detect_type(fn, itr)}()
     pool = StaticPool(2)
-    result = pmap(pool, fn, itr)
+    result = tmap(pool, fn, itr)
     close(pool)
     return result
 end
@@ -90,7 +96,7 @@ Also note that the primary thread is used.
 function qmap(fn, itr)
     result = Vector{_detect_type(fn, itr)}()
     pool = QueuePool()
-    result = pmap(pool, fn, itr)
+    result = tmap(pool, fn, itr)
     close(pool)
     return result
 end
@@ -122,13 +128,13 @@ Also note that the primary thread is not used.
 function qbmap(fn, itr)
     result = Vector{_detect_type(fn, itr)}()
     pool = QueuePool(2)
-    result = pmap(pool, fn, itr)
+    result = tmap(pool, fn, itr)
     close(pool)
     return result
 end
 
 """
-    logpmap(fn::Function, itr) -> (pool, collection)
+    logtmap(fn::Function, itr) -> (pool, collection)
 
 Mimics `Base.map`, but launches the function evaluations onto all available 
 threads, using a pre-assigned scheduling strategy appropriate for uniform
@@ -137,7 +143,7 @@ the logging functions and `plot`ted.
 
 # Example
 ```julia
-julia> (pool, result) = logpmap(1:8) do x
+julia> (pool, result) = logtmap(1:8) do x
          println((x,Threads.threadid()))
          x^2
        end;
@@ -159,10 +165,10 @@ julia> plot(pool)
 Note that while the execution order is not guaranteed, the result order is. 
 Also note that the primary thread is used.
 """
-function logpmap(fn::Function, itr)
+function logtmap(fn::Function, itr)
     result = Vector{_detect_type(fn, itr)}()
     pool = LoggedStaticPool()
-    result = pmap(pool, fn, itr)
+    result = tmap(pool, fn, itr)
     close(pool)
     return pool, result
 end
@@ -202,7 +208,7 @@ Also note that the primary thread is not used.
 function logbmap(fn, itr)
     result = Vector{_detect_type(fn, itr)}()
     pool = LoggedStaticPool(2)
-    result = pmap(pool, fn, itr)
+    result = tmap(pool, fn, itr)
     close(pool)
     return pool, result
 end
@@ -242,7 +248,7 @@ Also note that the primary thread is used.
 function logqmap(fn, itr)
     result = Vector{_detect_type(fn, itr)}()
     pool = LoggedQueuePool()
-    result = pmap(pool, fn, itr)
+    result = tmap(pool, fn, itr)
     close(pool)
     return pool, result
 end
@@ -282,14 +288,14 @@ Also note that the primary thread is not used.
 function logqbmap(fn, itr)
     result = Vector{_detect_type(fn, itr)}()
     pool = LoggedQueuePool(2)
-    result = pmap(pool, fn, itr)
+    result = tmap(pool, fn, itr)
     close(pool)
     return pool, result
 end
 
 
 """
-    pforeach(fn::Function, itr)
+    tforeach(fn::Function, itr)
 
 Mimics `Base.foreach`, but launches the function evaluations onto all available 
 threads, using a pre-assigned scheduling strategy appropriate for uniform
@@ -297,7 +303,7 @@ task durations.
 
 # Example
 ```julia
-julia> pforeach(x -> println((x,Threads.threadid())), 1:8)
+julia> tforeach(x -> println((x,Threads.threadid())), 1:8)
 (1, 1)
 (3, 2)
 (5, 3)
@@ -310,9 +316,9 @@ julia> pforeach(x -> println((x,Threads.threadid())), 1:8)
 Note that the execution order is not guaranteed, and that the primary thread 
 is used.
 """
-function pforeach(fn::Function, itr)
+function tforeach(fn::Function, itr)
     pool = StaticPool()
-    pforeach(pool, fn, itr)
+    tforeach(pool, fn, itr)
     close(pool)
     nothing
 end
@@ -342,7 +348,7 @@ is not used.
 """
 function bforeach(fn, itr)
     pool = StaticPool(2)
-    pforeach(pool, fn, itr)
+    tforeach(pool, fn, itr)
     close(pool)
     nothing
 end
@@ -371,7 +377,7 @@ is used.
 """
 function qforeach(fn, itr)
     pool = QueuePool()
-    pforeach(pool, fn, itr)
+    tforeach(pool, fn, itr)
     close(pool)
     nothing
 end
@@ -401,7 +407,7 @@ is not used.
 """
 function qbforeach(fn, itr)
     pool = QueuePool(2)
-    pforeach(pool, fn, itr)
+    tforeach(pool, fn, itr)
     close(pool)
     nothing
 end
@@ -409,7 +415,7 @@ end
 
 
 """
-    logpforeach(fn::Function, itr) -> pool
+    logtforeach(fn::Function, itr) -> pool
 
 Mimics `Base.foreach`, but launches the function evaluations onto all available 
 threads, using a pre-assigned scheduling strategy appropriate for uniform
@@ -418,7 +424,7 @@ the logging functions and `plot`ted.
 
 # Example
 ```julia
-julia> pool = logpforeach(x -> println((x,Threads.threadid())), 1:8);
+julia> pool = logtforeach(x -> println((x,Threads.threadid())), 1:8);
 (1, 1)
 (3, 2)
 (7, 4)
@@ -433,9 +439,9 @@ julia> plot(pool)
 Note that the execution order is not guaranteed, and that the primary thread 
 is used.
 """
-function logpforeach(fn::Function, itr)
+function logtforeach(fn::Function, itr)
     pool = LoggedStaticPool()
-    pforeach(pool, fn, itr)
+    tforeach(pool, fn, itr)
     close(pool)
     return pool
 end
@@ -468,7 +474,7 @@ is not used.
 """
 function logbforeach(fn, itr)
     pool = LoggedStaticPool(2)
-    pforeach(pool, fn, itr)
+    tforeach(pool, fn, itr)
     close(pool)
     return pool
 end
@@ -501,7 +507,7 @@ and `plot`ted.
 """
 function logqforeach(fn, itr)
     pool = LoggedQueuePool()
-    pforeach(pool, fn, itr)
+    tforeach(pool, fn, itr)
     close(pool)
     return pool
 end
@@ -534,7 +540,7 @@ is not used.
 """
 function logqbforeach(fn, itr)
     pool = LoggedQueuePool(2)
-    pforeach(pool, fn, itr)
+    tforeach(pool, fn, itr)
     close(pool)
     return pool
 end
