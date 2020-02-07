@@ -9,7 +9,7 @@ include("util.jl")
 
 @testset "LoggedQueuePool" begin
 
-    @testset "pforeach" begin
+    @testset "tforeach" begin
         @testset "foreground" begin
             N = 2 * Threads.nthreads()
             objs = [TestObj(x) for x in 1:N]
@@ -19,11 +19,11 @@ include("util.jl")
                 x.data += 1
             end
             pool = LoggedQueuePool()
-            pforeach(pool, fn!, objs)
+            tforeach(pool, fn!, objs)
             @test [x.data for x in objs] == collect(2:N+1)
             @test primary
             @test length(pool.recs) == N*2
-            @inferred pforeach(pool, fn!, objs)
+            @inferred tforeach(pool, fn!, objs)
             close(pool)
         end
 
@@ -35,15 +35,15 @@ include("util.jl")
                 x.data += 1
             end
             pool = LoggedQueuePool(2)
-            pforeach(pool, fn!, objs)
+            tforeach(pool, fn!, objs)
             @test [x.data for x in objs] == collect(2:N+1)
             @test length(pool.recs) == N*2
-            @inferred pforeach(pool, fn!, objs)
+            @inferred tforeach(pool, fn!, objs)
             close(pool)
         end
     end
 
-    @testset "pmap" begin
+    @testset "tmap" begin
         @testset "foreground" begin
             N = 2 * Threads.nthreads()
             objs = [TestObj(x) for x in 1:N]
@@ -53,10 +53,10 @@ include("util.jl")
                 x.data
             end
             pool = LoggedQueuePool()
-            @test pmap(pool, fn!, objs) == collect(1:N)
+            @test tmap(pool, fn!, objs) == collect(1:N)
             @test primary
             @test length(pool.recs) == N*2
-            @inferred pmap(pool, fn!, objs)
+            @inferred tmap(pool, fn!, objs)
             close(pool)
         end
 
@@ -68,9 +68,9 @@ include("util.jl")
                 x.data
             end
             pool = LoggedQueuePool(2)
-            @test pmap(pool, fn!, objs) == collect(1:N)
+            @test tmap(pool, fn!, objs) == collect(1:N)
             @test length(pool.recs) == N*2
-            @inferred pmap(pool, fn!, objs)
+            @inferred tmap(pool, fn!, objs)
             close(pool)
         end
     end
@@ -81,7 +81,7 @@ include("util.jl")
             objs = [TestObj(x) for x in 1:N]
             primary = Threads.nthreads() == 1
             pool = pwith(LoggedQueuePool()) do pool
-                pforeach(pool, objs) do x
+                tforeach(pool, objs) do x
                     Threads.threadid() == 1 && (primary = true)
                     x.data += 1
                 end
@@ -95,7 +95,7 @@ include("util.jl")
             N = 2 * Threads.nthreads()
             objs = [TestObj(x) for x in 1:N]
             pool = pwith(LoggedQueuePool(2)) do pool
-                pforeach(pool, objs) do x
+                tforeach(pool, objs) do x
                     Threads.nthreads() == 1 || Threads.threadid() == 1 && error("Task on primary")
                     x.data += 1
                 end

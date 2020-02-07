@@ -166,7 +166,7 @@ results(pool::LoggedQueuePool) = ResultIterator(pool)
 # ThreadPool Interface
 #############################
 
-function pmap(pool::LoggedQueuePool, fn::Function, itr)
+function tmap(pool::LoggedQueuePool, fn::Function, itr)
     N = length(itr)
     sizehint!(pool.recs, N)
     result = Vector{_detect_type(fn, itr)}(undef, N)

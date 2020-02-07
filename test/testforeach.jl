@@ -8,7 +8,7 @@ include("util.jl")
 
 @testset "foreaches" begin
 
-    @testset "pforeach" begin
+    @testset "tforeach" begin
         N = 2 * Threads.nthreads()
         objs = [TestObj(x) for x in 1:N]
         primary = Threads.nthreads() == 1
@@ -16,10 +16,10 @@ include("util.jl")
             Threads.threadid() == 1 && (primary = true)
             x.data += 1
         end
-        pforeach(fn!, objs)
+        tforeach(fn!, objs)
         @test [x.data for x in objs] == collect(2:N+1)
         @test primary
-        @inferred pforeach(fn!, objs)
+        @inferred tforeach(fn!, objs)
     end
 
     @testset "bforeach" begin
@@ -60,7 +60,7 @@ include("util.jl")
         @inferred qbforeach(fn!, objs)
     end
 
-    @testset "logpforeach" begin
+    @testset "logtforeach" begin
         N = 2 * Threads.nthreads()
         objs = [TestObj(x) for x in 1:N]
         primary = Threads.nthreads() == 1
@@ -68,11 +68,11 @@ include("util.jl")
             Threads.threadid() == 1 && (primary = true)
             x.data += 1
         end
-        p = logpforeach(fn!, objs)
+        p = logtforeach(fn!, objs)
         @test [x.data for x in objs] == collect(2:N+1)
         @test length(p.recs) == N*2
         @test primary
-        @inferred logpforeach(fn!, objs)
+        @inferred logtforeach(fn!, objs)
     end
 
     @testset "logbforeach" begin

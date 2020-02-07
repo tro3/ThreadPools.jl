@@ -33,7 +33,7 @@ primary thread, but its cousin [`@qbthreads`](@ref) uses the same strategy
 but in the background. There are also [`qmap`](@ref), [`qforeach`](@ref), 
 [`qbmap`](@ref), and [`qbforeach`](@ref).
 
-The package also exposes a lower-level [`@pspawnat`](@ref) macro that mimics the 
+The package also exposes a lower-level [`@tspawnat`](@ref) macro that mimics the 
 `Base.Threads.@spawn` macro, but allows direct thread assignment for users who want 
 to develop their own scheduling.
 
@@ -42,7 +42,7 @@ to develop their own scheduling.
 
 |  Task Type           | Foreground (primary allowed)                                                          |  Background (primary forbidden)                                                          |
 |:-------------------- |:------------------------------------------------------------------------------------- |:---------------------------------------------------------------------------------------- |
-| **Uniform tasks**    | `Base.Threads.@threads` `ThreadPools.pmap(fn, itrs)` `ThreadPools.pforeach(fn, itrs)` | `ThreadPools.@bthreads` `ThreadPools.bmap(fn, itrs)` `ThreadPools.bforeach(fn, itrs)`    |
+| **Uniform tasks**    | `Base.Threads.@threads` `ThreadPools.tmap(fn, itrs)` `ThreadPools.tforeach(fn, itrs)` | `ThreadPools.@bthreads` `ThreadPools.bmap(fn, itrs)` `ThreadPools.bforeach(fn, itrs)`    |
 | **Nonuniform tasks** | `ThreadPools.@qthreads` `ThreadPools.qmap(fn, itrs)` `ThreadPools.qforeach(fn, itrs)` | `ThreadPools.@qbthreads` `ThreadPools.qbmap(fn, itrs)` `ThreadPools.qbforeach(fn, itrs)` |
 
 
@@ -53,7 +53,7 @@ analyze the performance of the chosen strategy and thread count:
 
 | Task Type            | Foreground                                                                                     |  Background                                                                                       |
 | :------------------- |:---------------------------------------------------------------------------------------------- |:------------------------------------------------------------------------------------------------- |
-| **Uniform tasks**    | `ThreadPools.@logthreads` `ThreadPools.logpmap(fn, itrs)` `ThreadPools.logpforeach(fn, itrs)`  | `ThreadPools.@logbthreads` `ThreadPools.logbmap(fn, itrs)` `ThreadPools.logbforeach(fn, itrs)`    |
+| **Uniform tasks**    | `ThreadPools.@logthreads` `ThreadPools.logtmap(fn, itrs)` `ThreadPools.logtforeach(fn, itrs)`  | `ThreadPools.@logbthreads` `ThreadPools.logbmap(fn, itrs)` `ThreadPools.logbforeach(fn, itrs)`    |
 | **Nonuniform tasks** | `ThreadPools.@logqthreads` `ThreadPools.logqmap(fn, itrs)` `ThreadPools.logqforeach(fn, itrs)` | `ThreadPools.@logqbthreads` `ThreadPools.logqbmap(fn, itrs)` `ThreadPools.logqbforeach(fn, itrs)` |
 
 Please see below for usage examples.
@@ -83,7 +83,7 @@ julia> bmap([1,2,3]) do x
  4
  9
 
-julia> t = @pspawnat 4 Threads.threadid()
+julia> t = @tspawnat 4 Threads.threadid()
 Task (runnable) @0x0000000010743c70
 
 julia> fetch(t)
@@ -106,11 +106,11 @@ start time, and stop time and is given a color corresponding to its thread:
 ```julia
 julia> using Plots
 
-julia> pool = logpforeach(x -> sleep(0.1*x), 1:8);
+julia> pool = logtforeach(x -> sleep(0.1*x), 1:8);
 
 julia> plot(pool)
 ```
-![pforeach plot](./img/staticlog.png)
+![tforeach plot](./img/staticlog.png)
 
 ```julia
 julia> pool = logqforeach(x -> sleep(0.1*x), 1:8);
@@ -121,7 +121,7 @@ julia> plot(pool)
 
 
 Note the two different scheduling strategies are seen in the above plots. The 
-`pforeach` log shows that the jobs were assigned in order: 1 & 2 to 
+`tforeach` log shows that the jobs were assigned in order: 1 & 2 to 
 thread 1, 3 & 4 to thread 2, and so on.  The `qforeach` shows that each
 job (any thread) is started when the previous job on that thread completes.
 Because these jobs are very nonuniform (and stacked against the first
@@ -138,11 +138,11 @@ or `Base.Threads` to keep any code rework to a minimum.
 * [`@bthreads`](@ref)
 * [`@qthreads`](@ref)
 * [`@qbthreads`](@ref)
-* [`pmap(fn, itr)`](@ref)
+* [`tmap(fn, itr)`](@ref)
 * [`bmap(fn, itr)`](@ref)
 * [`qmap(fn, itr)`](@ref)
 * [`qbmap(fn, itr)`](@ref)
-* [`pforeach(fn, itr)`](@ref)
+* [`tforeach(fn, itr)`](@ref)
 * [`bforeach(fn, itr)`](@ref)
 * [`qforeach(fn, itr)`](@ref)
 * [`qbforeach(fn, itr)`](@ref)
@@ -153,11 +153,11 @@ or `Base.Threads` to keep any code rework to a minimum.
 * [`@logbthreads`](@ref)
 * [`@logqthreads`](@ref)
 * [`@logqbthreads`](@ref)
-* [`logpmap(fn, itr)`](@ref)
+* [`logtmap(fn, itr)`](@ref)
 * [`logbmap(fn, itr)`](@ref)
 * [`logqmap(fn, itr)`](@ref)
 * [`logqbmap(fn, itr)`](@ref)
-* [`logpforeach(fn, itr)`](@ref)
+* [`logtforeach(fn, itr)`](@ref)
 * [`logbforeach(fn, itr)`](@ref)
 * [`logqforeach(fn, itr)`](@ref)
 * [`logqbforeach(fn, itr)`](@ref)
@@ -166,11 +166,11 @@ or `Base.Threads` to keep any code rework to a minimum.
 @bthreads
 @qthreads
 @qbthreads
-pmap(fn::Function, itr)
+tmap(fn::Function, itr)
 bmap(fn, itr)
 qmap(fn, itr)
 qbmap(fn, itr)
-pforeach(fn::Function, itr)
+tforeach(fn::Function, itr)
 bforeach(fn, itr)
 qforeach(fn, itr)
 qbforeach(fn, itr)
@@ -179,16 +179,16 @@ qbforeach(fn, itr)
 @logbthreads
 @logqthreads
 @logqbthreads
-logpmap(fn::Function, itr)
+logtmap(fn::Function, itr)
 logbmap(fn, itr)
 logqmap(fn, itr)
 logqbmap(fn, itr)
-logpforeach(fn::Function, itr)
+logtforeach(fn::Function, itr)
 logbforeach(fn, itr)
 logqforeach(fn, itr)
 logqbforeach(fn, itr)
 
-@pspawnat
+@tspawnat
 ```
 
 ## Composable API
@@ -203,8 +203,8 @@ commands, and usage in more complex scenarios, such as stack processing.
 ```@docs
 pwith(fn::Function, pool)
 @pthreads
-pmap(fn::Function, pool, itr)
-pforeach(pool, fn::Function, itr::AbstractVector)
+tmap(fn::Function, pool, itr)
+tforeach(pool, fn::Function, itr::AbstractVector)
 ```
 
 ### AbstractThreadPool

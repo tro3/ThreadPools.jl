@@ -1,13 +1,20 @@
 
 abstract type AbstractThreadPool end
 
+@deprecate pforeach(pool, fn::Function, itr) tforeach(pool, fn::Function, itr)
+@deprecate pforeach(fn::Function, pool, itr) tforeach(fn::Function, pool, itr)
+@deprecate pmap(pool, fn::Function, itr) tmap(pool, fn::Function, itr)
+@deprecate pmap(fn::Function, pool, itr) tmap(fn::Function, pool, itr)
+
+
+
 _detect_type(fn, itr) = eltype(map(fn, empty(itr)))
 _detect_type(fn, itrs::Tuple) = eltype(map(fn, [empty(x) for x in itrs]...))
 
 
 """
-    pforeach(pool, fn::Function, itr)
-    pforeach(fn::Function, pool, itr)
+    tforeach(pool, fn::Function, itr)
+    tforeach(fn::Function, pool, itr)
 
 Mimics `Base.foreach`, but launches the function evaluations onto the provided 
 pool to assign the tasks.
@@ -15,7 +22,7 @@ pool to assign the tasks.
 # Example
 ```
 julia> pool = pwith(ThreadPools.LoggedQueuePool(1,2)) do pool
-         pforeach(pool,  x -> println((x,Threads.threadid())), 1:8)
+         tforeach(pool,  x -> println((x,Threads.threadid())), 1:8)
        end;
 (2, 2)
 (1, 1)
@@ -29,23 +36,23 @@ julia> pool = pwith(ThreadPools.LoggedQueuePool(1,2)) do pool
 julia> plot(pool)
 ```
 """
-function pforeach(pool, fn::Function, itr::AbstractVector)
-    pmap(pool, fn, itr)
+function tforeach(pool, fn::Function, itr::AbstractVector)
+    tmap(pool, fn, itr)
     nothing
 end
 
-pforeach(fn::Function, pool, itr) = pforeach(pool, fn, itr::AbstractVector)
-pforeach(pool, fn::Function, itrs...) = pforeach(pool, (x) -> fn(x...), zip(itrs...))
-pforeach(fn::Function, pool, itrs...) = pforeach(pool, (x) -> fn(x...), zip(itrs...))
+tforeach(fn::Function, pool, itr) = tforeach(pool, fn, itr::AbstractVector)
+tforeach(pool, fn::Function, itrs...) = tforeach(pool, (x) -> fn(x...), zip(itrs...))
+tforeach(fn::Function, pool, itrs...) = tforeach(pool, (x) -> fn(x...), zip(itrs...))
 
 
-# function pmap(pool::AbstractThreadPool, fn::Function, itr::AbstractVector)
+# function tmap(pool::AbstractThreadPool, fn::Function, itr::AbstractVector)
 #     error("Not Implemented")
 # end
 
 """
-    pmap(pool, fn::Function, itr)
-    pmap(fn::Function, pool, itr)
+    tmap(pool, fn::Function, itr)
+    tmap(fn::Function, pool, itr)
 
 Mimics `Base.map`, but launches the function evaluations onto the provided 
 pool to assign the tasks.
@@ -53,7 +60,7 @@ pool to assign the tasks.
 # Example
 ```
 julia> pool = pwith(ThreadPools.LoggedQueuePool(1,2)) do pool
-         pmap(pool, 1:8) do x
+         tmap(pool, 1:8) do x
            println((x,Threads.threadid()))
          end
        end;
@@ -69,9 +76,9 @@ julia> pool = pwith(ThreadPools.LoggedQueuePool(1,2)) do pool
 julia> plot(pool)
 ```
 """
-pmap(fn::Function, pool, itr) = pmap(pool, fn, itr)
-pmap(pool, fn::Function, itrs...) = pmap(pool, (x) -> fn(x...), zip(itrs...))
-pmap(fn::Function, pool, itrs...) = pmap(pool, (x) -> fn(x...), zip(itrs...))
+tmap(fn::Function, pool, itr) = tmap(pool, fn, itr)
+tmap(pool, fn::Function, itrs...) = tmap(pool, (x) -> fn(x...), zip(itrs...))
+tmap(fn::Function, pool, itrs...) = tmap(pool, (x) -> fn(x...), zip(itrs...))
 
 
 """
@@ -83,7 +90,7 @@ closed pool for any desired analysis or plotting.
 # Example
 ```
 julia> pwith(ThreadPools.QueuePool(1,2)) do pool
-         pforeach(pool, x -> println((x,Threads.threadid())), 1:8)
+         tforeach(pool, x -> println((x,Threads.threadid())), 1:8)
        end;
 (2, 2)
 (1, 1)
@@ -142,7 +149,7 @@ macro pthreads(pool, args...)
             range = ex.args[1].args[2]
             body = ex.args[2]
             return quote
-                pforeach($(esc(pool)), $(esc(range))) do $(esc(index))
+                tforeach($(esc(pool)), $(esc(range))) do $(esc(index))
                     $(esc(body))
                 end
             end

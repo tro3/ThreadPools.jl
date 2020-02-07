@@ -14,8 +14,8 @@ function _pthread_macro(pool, log, args...)
             range = ex.args[1].args[2]
             body = ex.args[2]
             return quote
-                pool = pwith($(esc(pool))) do p
-                    pforeach(p, $(esc(range))) do $(esc(index))
+                pool = pwith($pool) do p
+                    tforeach(p, $(esc(range))) do $(esc(index))
                         $(esc(body))
                     end
                 end
@@ -53,7 +53,7 @@ Note that execution order is not guaranteed, but the primary thread does not
 show up on any of the jobs.
 """
 macro bthreads(args...) 
-    return _pthread_macro(StaticPool(2), false, args...)
+    return _pthread_macro(:(StaticPool(2)), false, args...)
     nothing
 end
 
@@ -83,7 +83,7 @@ julia> @qthreads for x in 1:8
 Note that execution order is not guaranteed and the primary thread is used.
 """
 macro qthreads(args...) 
-    return _pthread_macro(QueuePool(1), false, args...)
+    return _pthread_macro(:(QueuePool(1)), false, args...)
 end
 
 """
@@ -113,7 +113,7 @@ Note that execution order is not guaranteed, but the primary thread does not
 show up on any of the jobs.
 """
 macro qbthreads(args...) 
-    return _pthread_macro(QueuePool(2), false, args...)
+    return _pthread_macro(:(QueuePool(2)), false, args...)
 end
 
 """
@@ -141,7 +141,7 @@ julia> plot(pool)
 Note that execution order is not guaranteed and the primary thread is used.
 """
 macro logthreads(args...) 
-    return _pthread_macro(LoggedStaticPool(1), true, args...)
+    return _pthread_macro(:(LoggedStaticPool(1)), true, args...)
 end
 
 """
@@ -171,7 +171,7 @@ Note that execution order is not guaranteed, but the primary thread does not
 show up on any of the jobs.
 """
 macro logbthreads(args...) 
-    return _pthread_macro(LoggedQueuePool(2), true, args...)
+    return _pthread_macro(:(LoggedQueuePool(2)), true, args...)
 end
 
 """
@@ -202,7 +202,7 @@ julia> plot(pool)
 Note that execution order is not guaranteed and the primary thread is used.
 """
 macro logqthreads(args...) 
-    return _pthread_macro(LoggedStaticPool(1), true, args...)
+    return _pthread_macro(:(LoggedStaticPool(1)), true, args...)
 end
 
 """
@@ -234,31 +234,31 @@ Note that execution order is not guaranteed, but the primary thread does not
 show up on any of the jobs.
 """
 macro logqbthreads(args...) 
-    return _pthread_macro(LoggedQueuePool(2), true, args...)
+    return _pthread_macro(:(LoggedQueuePool(2)), true, args...)
 end
 
 
 """
-    @pspawnat tid -> task
+    @tspawnat tid -> task
 
 Mimics `Base.Threads.@spawn`, but assigns the task to thread `tid`.
 
 # Example
 ```julia
-julia> t = @pspawnat 4 Threads.threadid()
+julia> t = @tspawnat 4 Threads.threadid()
 Task (runnable) @0x0000000010743c70
 
 julia> fetch(t)
 4
 ```
 """
-macro pspawnat(thrdid, expr)
+macro tspawnat(thrdid, expr)
     thunk = esc(:(()->($expr)))
     var = esc(Base.sync_varname)
     tid = esc(thrdid)
     quote
         if $tid < 1 || $tid > Threads.nthreads()
-            throw(AssertionError("@pspawnat thread assignment ($($tid)) must be between 1 and Threads.nthreads() (1:$(Threads.nthreads()))"))
+            throw(AssertionError("@tspawnat thread assignment ($($tid)) must be between 1 and Threads.nthreads() (1:$(Threads.nthreads()))"))
         end
         local task = Task($thunk)
         task.sticky = false
@@ -269,4 +269,9 @@ macro pspawnat(thrdid, expr)
         schedule(task)
         task
     end
+end
+
+macro pspawnat(thrdid, expr)
+    @warn "`@pspawnat` is deprecated, use `tspawnat` instead."
+    return @tspawnat(thrdid, expr)
 end

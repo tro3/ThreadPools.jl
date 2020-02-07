@@ -184,7 +184,7 @@ Base.IteratorEltype(::ResultIterator) = Base.EltypeUnknown()
 # ThreadPool Interface
 #############################
 
-function pmap(pool::QueuePool, fn::Function, itr)
+function tmap(pool::QueuePool, fn::Function, itr)
     N = length(itr)
     result = Vector{_detect_type(fn, itr)}(undef, N)
     _fn = (ind, x) -> (ind, fn(x))
