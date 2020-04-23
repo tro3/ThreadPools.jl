@@ -251,9 +251,9 @@ the output of `readlog` or a string representing the log file name.
 @recipe function f(log::ThreadLog)
     ids, threadids, starts, stops = _get_plot_data(log)
 
-    color   --> [threadids threadids]'
-    xlabel  --> "Time [s]"
-    ylabel  --> "Job Index"
+    seriescolor   --> [threadids threadids]'
+    xguide  --> "Time [s]"
+    yguide  --> "Job Index"
     legend  --> false
 
     [starts stops]',  [ids ids]'
@@ -263,9 +263,9 @@ end
     log = pool.log
     ids, threadids, starts, stops = _get_plot_data(log)
 
-    color   --> [threadids threadids]'
-    xlabel  --> "Time [s]"
-    ylabel  --> "Job Index"
+    seriescolor   --> [threadids threadids]'
+    xguide  --> "Time [s]"
+    yguide  --> "Job Index"
     legend  --> false
 
     [starts stops]',  [ids ids]'
