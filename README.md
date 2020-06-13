@@ -40,7 +40,7 @@ want to develop their own scheduling.
 
 |                      | Foreground (primary allowed) |  Background (primary forbidden) |
 | -------------------- | ---------------------------- | ------------------------------- |
-| **Uniform tasks**    | <ul><li>`Base.Threads.@threads`</li><li>`ThreadPools.pmap(fn, itrs)`</li><li>`ThreadPools.pforeach(fn, itrs)`</li></ul> | <ul><li>`ThreadPools.@bthreads`</li><li>`ThreadPools.bmap(fn, itrs)`</li><li>`ThreadPools.bforeach(fn, itrs)`</li></ul> |
+| **Uniform tasks**    | <ul><li>`Base.Threads.@threads`</li><li>`ThreadPools.tmap(fn, itrs)`</li><li>`ThreadPools.tforeach(fn, itrs)`</li></ul> | <ul><li>`ThreadPools.@bthreads`</li><li>`ThreadPools.bmap(fn, itrs)`</li><li>`ThreadPools.bforeach(fn, itrs)`</li></ul> |
 | **Nonuniform tasks** | <ul><li>`ThreadPools.@qthreads`</li><li>`ThreadPools.qmap(fn, itrs)`</li><li>`ThreadPools.qforeach(fn, itrs)`</li></ul> | <ul><li>`ThreadPools.@qbthreads`</li><li>`ThreadPools.qbmap(fn, itrs)`</li><li>`ThreadPools.qbforeach(fn, itrs)`</li></ul> |
 
 
@@ -51,7 +51,7 @@ analyze the performance of the chosen strategy and thread count:
 
 |                      | Foreground  |  Background  |
 | -------------------- | ----------- | ------------ |
-| **Uniform tasks**    | <ul><li>`ThreadPools.@logthreads`</li><li>`ThreadPools.logpmap(fn, itrs)`</li><li>`ThreadPools.logpforeach(fn, itrs)`</li></ul> | <ul><li>`ThreadPools.@logbthreads`</li><li>`ThreadPools.logbmap(fn, itrs)`</li><li>`ThreadPools.logbforeach(fn, itrs)`</li></ul> |
+| **Uniform tasks**    | <ul><li>`ThreadPools.@logthreads`</li><li>`ThreadPools.logtmap(fn, itrs)`</li><li>`ThreadPools.logtforeach(fn, itrs)`</li></ul> | <ul><li>`ThreadPools.@logbthreads`</li><li>`ThreadPools.logbmap(fn, itrs)`</li><li>`ThreadPools.logbforeach(fn, itrs)`</li></ul> |
 | **Nonuniform tasks** | <ul><li>`ThreadPools.@logqthreads`</li><li>`ThreadPools.logqmap(fn, itrs)`</li><li>`ThreadPools.logqforeach(fn, itrs)`</li></ul> | <ul><li>`ThreadPools.@logqbthreads`</li><li>`ThreadPools.logqbmap(fn, itrs)`</li><li>`ThreadPools.logqbforeach(fn, itrs)`</li></ul> |
 
 Please see below for usage examples.
@@ -112,11 +112,11 @@ start time, and stop time and is given a color corresponding to its thread:
 ```julia
 julia> using Plots
 
-julia> pool = logpforeach(x -> sleep(0.1*x), 1:8);
+julia> pool = logtforeach(x -> sleep(0.1*x), 1:8);
 
 julia> plot(pool)
 ```
-![pforeach plot](https://tro3.github.io/ThreadPools.jl/build/img/staticlog.png)
+![tforeach plot](https://tro3.github.io/ThreadPools.jl/build/img/staticlog.png)
 
 
 ```julia
@@ -128,7 +128,7 @@ julia> plot(pool)
 
 
 Note the two different scheduling strategies are seen in the above plots. The 
-`pforeach` log shows that the jobs were assigned in order: 1 & 2 to 
+`tforeach` log shows that the jobs were assigned in order: 1 & 2 to 
 thread 1, 3 & 4 to thread 2, and so on.  The `qforeach` shows that each
 job (any thread) is started when the previous job on that thread completes.
 Because these jobs are very nonuniform (and stacked against the first
