@@ -171,7 +171,7 @@ Note that execution order is not guaranteed, but the primary thread does not
 show up on any of the jobs.
 """
 macro logbthreads(args...) 
-    return _pthread_macro(:(LoggedQueuePool(2)), true, args...)
+    return _pthread_macro(:(LoggedStaticPool(2)), true, args...)
 end
 
 """
@@ -202,7 +202,7 @@ julia> plot(pool)
 Note that execution order is not guaranteed and the primary thread is used.
 """
 macro logqthreads(args...) 
-    return _pthread_macro(:(LoggedStaticPool(1)), true, args...)
+    return _pthread_macro(:(LoggedQueuePool(1)), true, args...)
 end
 
 """

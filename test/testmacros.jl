@@ -86,6 +86,7 @@ include("util.jl")
             pool = @logqthreads for x in objs
                 Threads.threadid() == 1 && (primary = true)
                 x.data += 1
+                sleep(0.001)
             end
             @test primary
             @test [x.data for x in objs] == collect(2:N+1)
