@@ -32,7 +32,7 @@ end
 
 function tmap(pool::StaticPool, fn::Function, itr)
     data = collect(itr)
-    applicable(fn, data[1]) || error("function can't be applied to iterator contents")
+    applicable(fn, first(data)) || error("function can't be applied to iterator contents")
     N = length(data)
     result = Array{_detect_type(fn, data), ndims(data)}(undef, size(data))
     nthrds = length(pool.tids)

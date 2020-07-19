@@ -39,7 +39,7 @@ end
 
 function tmap(pool::LoggedStaticPool, fn::Function, itr)
     data = collect(itr)
-    applicable(fn, data[1]) || error("function can't be applied to iterator contents")
+    applicable(fn, first(data)) || error("function can't be applied to iterator contents")
     N = length(data)
     sizehint!(pool.recs, N)
     result = Array{_detect_type(fn, data), ndims(data)}(undef, size(data))

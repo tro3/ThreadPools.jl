@@ -38,14 +38,14 @@ julia> pool = pwith(ThreadPools.LoggedQueuePool(1,2)) do pool
 julia> plot(pool)
 ```
 """
-function tforeach(pool, fn::Function, itr)
+function tforeach(pool::AbstractThreadPool, fn::Function, itr)
     tmap(pool, fn, itr)
     nothing
 end
 
-tforeach(fn::Function, pool, itr) = tforeach(pool, fn, itr)
-#tforeach(pool, fn::Function, itrs...) = tforeach(pool, (x) -> fn(x...), zip(itrs...))
-#tforeach(fn::Function, pool, itrs...) = tforeach(pool, (x) -> fn(x...), zip(itrs...))
+tforeach(fn::Function, pool::AbstractThreadPool, itr) = tforeach(pool, fn, itr)
+tforeach(pool::AbstractThreadPool, fn::Function, itr1, itrs...) = tforeach(pool, x -> fn(x...), zip(itr1, itrs...))
+tforeach(fn::Function, pool::AbstractThreadPool, itr1, itrs...) = tforeach(pool, x -> fn(x...), zip(itr1, itrs...))
 
 
 """
@@ -74,9 +74,9 @@ julia> pool = pwith(ThreadPools.LoggedQueuePool(1,2)) do pool
 julia> plot(pool)
 ```
 """
-tmap(fn::Function, pool, itr) = tmap(pool, fn, itr)
-# tmap(pool, fn::Function, itrs...) = tmap(pool, (x) -> fn(x...), zip(itrs...))
-# tmap(fn::Function, pool, itrs...) = tmap(pool, (x) -> fn(x...), zip(itrs...))
+tmap(fn::Function, pool::AbstractThreadPool, itr) = tmap(pool, fn, itr)
+tmap(pool::AbstractThreadPool, fn::Function, itr1, itrs...) = tmap(pool, x -> fn(x...), zip(itr1, itrs...))
+tmap(fn::Function, pool::AbstractThreadPool, itr1, itrs...) = tmap(pool, x -> fn(x...), zip(itr1, itrs...))
 
 
 """
