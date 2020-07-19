@@ -167,12 +167,14 @@ results(pool::LoggedQueuePool) = ResultIterator(pool)
 #############################
 
 function tmap(pool::LoggedQueuePool, fn::Function, itr)
-    N = length(itr)
+    data = collect(itr)
+    applicable(fn, data[1]) || error("function can't be applied to iterator contents")
+    N = length(data)
     sizehint!(pool.recs, N)
-    result = Vector{_detect_type(fn, itr)}(undef, N)
+    result = Array{_detect_type(fn, data), ndims(data)}(undef, size(data))
     _fn = (ind, x) -> (ind, fn(x))
     @async begin
-        for (ind, item) in enumerate(itr)
+        for (ind, item) in enumerate(data)
             put!(pool, _fn, ind, item)
         end
     end

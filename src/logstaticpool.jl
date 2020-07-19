@@ -37,26 +37,32 @@ end
 # ThreadPool Interface
 #############################
 
-function tmap(pool::LoggedStaticPool, fn::Function, itr)::Vector{_detect_type(fn, itr)}
-    N = length(itr)
+function tmap(pool::LoggedStaticPool, fn::Function, itr)
+    data = collect(itr)
+    applicable(fn, data[1]) || error("function can't be applied to iterator contents")
+    N = length(data)
     sizehint!(pool.recs, N)
-    result = Vector{_detect_type(fn, itr)}(undef, N)
-    nts = length(pool.tids)
-    n = div(N,nts)
-    r = N % nts
+    result = Array{_detect_type(fn, data), ndims(data)}(undef, size(data))
+    nthrds = length(pool.tids)
+    njobs = div(N,nthrds)
+    remjobs = N % nthrds
 
-    _fn = (tind) -> begin
-        n0 = (tind-1)*n + 1 + (nts-tind+1 > r ? 0 : tind-nts+1)
-        n1 = n0-1 + n + (nts-tind+1 <= r ? 1 : 0)
-        tid = Threads.threadid()
-        for i in n0:n1
-            lock(pool.lck)
-            push!(pool.recs, (i, tid, true, time_ns()))
-            unlock(pool.lck)
-            @inbounds result[i] = fn(Base.unsafe_getindex(itr, i))
-            lock(pool.lck)
-            push!(pool.recs, (i, tid, false, time_ns()))
-            unlock(pool.lck)
+    len(ind) = max(0, njobs + (nthrds-ind+1 <= remjobs ? 1 : 0))
+    finish(ind) = sum([len(x) for x in 1:ind])
+    start(ind) = finish(ind)-len(ind)+1
+
+    _fn(ind) = begin
+        if finish(ind) > 0
+            tid = Threads.threadid()
+            for i in start(ind):finish(ind)
+                lock(pool.lck)
+                push!(pool.recs, (i, tid, true, time_ns()))
+                unlock(pool.lck)
+                @inbounds result[i] = fn(Base.unsafe_getindex(data, i))
+                lock(pool.lck)
+                push!(pool.recs, (i, tid, false, time_ns()))
+                unlock(pool.lck)
+            end
         end
     end
 

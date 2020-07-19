@@ -30,9 +30,8 @@ Note that while the execution order is not guaranteed, the result order is.
 Also note that the primary thread is used.
 """
 function tmap(fn::Function, itr)
-    result = Vector{_detect_type(fn, itr)}()
     pool = StaticPool()
-    result = tmap(pool, fn, itr)
+    result::Array{_detect_type(fn, itr), ndims(itr)} = tmap(pool, fn, itr)
     close(pool)
     return result
 end
@@ -62,9 +61,8 @@ Note that while the execution order is not guaranteed, the result order is,
 Also note that the primary thread is not used.
 """
 function bmap(fn, itr)
-    result = Vector{_detect_type(fn, itr)}()
     pool = StaticPool(2)
-    result = tmap(pool, fn, itr)
+    result::Array{_detect_type(fn, itr), ndims(itr)} = tmap(pool, fn, itr)
     close(pool)
     return result
 end
@@ -94,9 +92,8 @@ Note that while the execution order is not guaranteed, the result order is.
 Also note that the primary thread is used.
 """
 function qmap(fn, itr)
-    result = Vector{_detect_type(fn, itr)}()
     pool = QueuePool()
-    result = tmap(pool, fn, itr)
+    result::Array{_detect_type(fn, itr), ndims(itr)} = tmap(pool, fn, itr)
     close(pool)
     return result
 end
@@ -126,9 +123,8 @@ Note that while the execution order is not guaranteed, the result order is,
 Also note that the primary thread is not used.
 """
 function qbmap(fn, itr)
-    result = Vector{_detect_type(fn, itr)}()
     pool = QueuePool(2)
-    result = tmap(pool, fn, itr)
+    result::Array{_detect_type(fn, itr), ndims(itr)} = tmap(pool, fn, itr)
     close(pool)
     return result
 end
@@ -166,9 +162,8 @@ Note that while the execution order is not guaranteed, the result order is.
 Also note that the primary thread is used.
 """
 function logtmap(fn::Function, itr)
-    result = Vector{_detect_type(fn, itr)}()
     pool = LoggedStaticPool()
-    result = tmap(pool, fn, itr)
+    result::Array{_detect_type(fn, itr), ndims(itr)} = tmap(pool, fn, itr)
     close(pool)
     return pool, result
 end
@@ -206,9 +201,8 @@ Note that while the execution order is not guaranteed, the result order is,
 Also note that the primary thread is not used.
 """
 function logbmap(fn, itr)
-    result = Vector{_detect_type(fn, itr)}()
     pool = LoggedStaticPool(2)
-    result = tmap(pool, fn, itr)
+    result::Array{_detect_type(fn, itr), ndims(itr)} = tmap(pool, fn, itr)
     close(pool)
     return pool, result
 end
@@ -246,9 +240,8 @@ Note that while the execution order is not guaranteed, the result order is.
 Also note that the primary thread is used.
 """
 function logqmap(fn, itr)
-    result = Vector{_detect_type(fn, itr)}()
     pool = LoggedQueuePool()
-    result = tmap(pool, fn, itr)
+    result::Array{_detect_type(fn, itr), ndims(itr)} = tmap(pool, fn, itr)
     close(pool)
     return pool, result
 end
@@ -286,9 +279,8 @@ Note that while the execution order is not guaranteed, the result order is,
 Also note that the primary thread is not used.
 """
 function logqbmap(fn, itr)
-    result = Vector{_detect_type(fn, itr)}()
     pool = LoggedQueuePool(2)
-    result = tmap(pool, fn, itr)
+    result::Array{_detect_type(fn, itr), ndims(itr)} = tmap(pool, fn, itr)
     close(pool)
     return pool, result
 end

@@ -31,17 +31,23 @@ end
 #############################
 
 function tmap(pool::StaticPool, fn::Function, itr)
-    N = length(itr)
-    result = Vector{_detect_type(fn, itr)}(undef, N)
-    nts = length(pool.tids)
-    n = div(N,nts)
-    r = N % nts
+    data = collect(itr)
+    applicable(fn, data[1]) || error("function can't be applied to iterator contents")
+    N = length(data)
+    result = Array{_detect_type(fn, data), ndims(data)}(undef, size(data))
+    nthrds = length(pool.tids)
+    njobs = div(N,nthrds)
+    remjobs = N % nthrds
 
-    _fn = (tind) -> begin
-        n0 = (tind-1)*n + 1 + (nts-tind+1 > r ? 0 : tind-nts+1)
-        n1 = n0-1 + n + (nts-tind+1 <= r ? 1 : 0)
-        for i in n0:n1
-            @inbounds result[i] = fn(Base.unsafe_getindex(itr, i))
+    len(ind) = max(0, njobs + (nthrds-ind+1 <= remjobs ? 1 : 0))
+    finish(ind) = sum([len(x) for x in 1:ind])
+    start(ind) = finish(ind)-len(ind)+1
+
+    _fn(ind) = begin
+        if finish(ind) > 0
+            for i in start(ind):finish(ind)
+                @inbounds result[i] = fn(Base.unsafe_getindex(data, i))
+            end
         end
     end
 
@@ -52,5 +58,3 @@ function tmap(pool::StaticPool, fn::Function, itr)
 
     return result
 end
-
-#

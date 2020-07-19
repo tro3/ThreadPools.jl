@@ -1,3 +1,4 @@
+import Core.Compiler
 
 abstract type AbstractThreadPool end
 
@@ -8,8 +9,9 @@ abstract type AbstractThreadPool end
 
 
 
-_detect_type(fn, itr) = eltype(map(fn, empty(itr)))
-_detect_type(fn, itrs::Tuple) = eltype(map(fn, [empty(x) for x in itrs]...))
+_detect_type(fn, itr) = Core.Compiler.return_type(fn, Tuple{eltype(itr)})
+#_detect_type(fn, itrs::Tuple) = Compiler.Core.return_type(fn, Tuple{eltype(itr)})
+#_detect_type(fn, itrs::Tuple) = eltype(map(fn, [empty(x) for x in itrs]...))
 
 
 """
@@ -36,19 +38,15 @@ julia> pool = pwith(ThreadPools.LoggedQueuePool(1,2)) do pool
 julia> plot(pool)
 ```
 """
-function tforeach(pool, fn::Function, itr::AbstractVector)
+function tforeach(pool, fn::Function, itr)
     tmap(pool, fn, itr)
     nothing
 end
 
-tforeach(fn::Function, pool, itr) = tforeach(pool, fn, itr::AbstractVector)
-tforeach(pool, fn::Function, itrs...) = tforeach(pool, (x) -> fn(x...), zip(itrs...))
-tforeach(fn::Function, pool, itrs...) = tforeach(pool, (x) -> fn(x...), zip(itrs...))
+tforeach(fn::Function, pool, itr) = tforeach(pool, fn, itr)
+#tforeach(pool, fn::Function, itrs...) = tforeach(pool, (x) -> fn(x...), zip(itrs...))
+#tforeach(fn::Function, pool, itrs...) = tforeach(pool, (x) -> fn(x...), zip(itrs...))
 
-
-# function tmap(pool::AbstractThreadPool, fn::Function, itr::AbstractVector)
-#     error("Not Implemented")
-# end
 
 """
     tmap(pool, fn::Function, itr)
@@ -77,8 +75,8 @@ julia> plot(pool)
 ```
 """
 tmap(fn::Function, pool, itr) = tmap(pool, fn, itr)
-tmap(pool, fn::Function, itrs...) = tmap(pool, (x) -> fn(x...), zip(itrs...))
-tmap(fn::Function, pool, itrs...) = tmap(pool, (x) -> fn(x...), zip(itrs...))
+# tmap(pool, fn::Function, itrs...) = tmap(pool, (x) -> fn(x...), zip(itrs...))
+# tmap(fn::Function, pool, itrs...) = tmap(pool, (x) -> fn(x...), zip(itrs...))
 
 
 """

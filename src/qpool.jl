@@ -185,11 +185,13 @@ Base.IteratorEltype(::ResultIterator) = Base.EltypeUnknown()
 #############################
 
 function tmap(pool::QueuePool, fn::Function, itr)
-    N = length(itr)
-    result = Vector{_detect_type(fn, itr)}(undef, N)
+    data = collect(itr)
+    applicable(fn, data[1]) || error("function can't be applied to iterator contents")
+    N = length(data)
+    result = Array{_detect_type(fn, data), ndims(data)}(undef, size(data))
     _fn = (ind, x) -> (ind, fn(x))
     @async begin
-        for (ind, item) in enumerate(itr)
+        for (ind, item) in enumerate(data)
             put!(pool, _fn, ind, item)
         end
     end
