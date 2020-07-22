@@ -253,21 +253,24 @@ julia> fetch(t)
 ```
 """
 macro tspawnat(thrdid, expr)
+    letargs = Base._lift_one_interp!(expr)
+    tid = esc(thrdid)
     thunk = esc(:(()->($expr)))
     var = esc(Base.sync_varname)
-    tid = esc(thrdid)
     quote
         if $tid < 1 || $tid > Threads.nthreads()
-            throw(AssertionError("@tspawnat thread assignment ($($tid)) must be between 1 and Threads.nthreads() (1:$(Threads.nthreads()))"))
+             throw(AssertionError("@tspawnat thread assignment ($($tid)) must be between 1 and Threads.nthreads() (1:$(Threads.nthreads()))"))
         end
-        local task = Task($thunk)
-        task.sticky = false
-        ccall(:jl_set_task_tid, Cvoid, (Any, Cint), task, $tid-1)
-        if $(Expr(:isdefined, var))
-            push!($var, task)
+        let $(letargs...)
+            local task = Task($thunk)
+            task.sticky = false
+            ccall(:jl_set_task_tid, Cvoid, (Any, Cint), task, $tid-1)
+            if $(Expr(:islocal, var))
+                put!($var, task)
+            end
+            schedule(task)
+            task
         end
-        schedule(task)
-        task
     end
 end
 
