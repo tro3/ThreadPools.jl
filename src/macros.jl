@@ -259,7 +259,7 @@ macro tspawnat(thrdid, expr)
     var = esc(Base.sync_varname)
     quote
         if $tid < 1 || $tid > Threads.nthreads()
-             throw(AssertionError("@tspawnat thread assignment ($($tid)) must be between 1 and Threads.nthreads() (1:$(Threads.nthreads()))"))
+            throw(AssertionError("@tspawnat thread assignment ($($tid)) must be between 1 and Threads.nthreads() (1:$(Threads.nthreads()))"))
         end
         let $(letargs...)
             local task = Task($thunk)
