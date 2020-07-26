@@ -8,10 +8,7 @@ abstract type AbstractThreadPool end
 @deprecate pmap(fn::Function, pool, itr) tmap(fn::Function, pool, itr)
 
 
-
 _detect_type(fn, itr) = Core.Compiler.return_type(fn, Tuple{eltype(itr)})
-#_detect_type(fn, itrs::Tuple) = Compiler.Core.return_type(fn, Tuple{eltype(itr)})
-#_detect_type(fn, itrs::Tuple) = eltype(map(fn, [empty(x) for x in itrs]...))
 
 
 """
