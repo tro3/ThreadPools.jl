@@ -15,7 +15,7 @@ mutable struct QueuePool <: AbstractThreadPool
         pool = new(Channel{Task}(N), Channel{Task}(N), Threads.Atomic{Int}(0))
         Threads.@threads for tid in 1:Threads.nthreads()
             if tid in tids
-                @async handler(pool)
+                schedule(Task(()->handler(pool)))
             end
         end
         return pool
@@ -25,8 +25,11 @@ end
 function _default_handler(pool)
     for t in pool.inq
         schedule(t)
-        wait(t)
-        put!(pool.outq, t)
+        try
+            wait(t)
+        finally
+            put!(pool.outq, t)
+        end
         Threads.atomic_sub!(pool.cnt, 1)
     end
 end
