@@ -1,14 +1,9 @@
 
-include("teststatic.jl")
-include("testlogstatic.jl")
-include("testq.jl")
-include("testlogq.jl")
-include("testmacros.jl")
-include("testmaps.jl")
-include("testforeach.jl")
-include("testlogfcns.jl")
-include("stacktests.jl")
-include("testspawnat.jl")
-include("testmultidim.jl")
-include("testmultiarg.jl")
-include("testplots.jl")
+let cmd = `$(Base.julia_cmd()) --depwarn=error --startup-file=no runtests_exec.jl`
+    for test_nthreads in (1, 2, 4) # run once to try single-threaded mode, then try a couple times to trigger bad races
+        new_env = copy(ENV)
+        new_env["JULIA_NUM_THREADS"] = string(test_nthreads)
+        println("\n# Threads = $test_nthreads")
+        run(pipeline(setenv(cmd, new_env), stdout = stdout, stderr = stderr))
+    end
+end
