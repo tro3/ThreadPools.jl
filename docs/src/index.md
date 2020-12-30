@@ -201,8 +201,8 @@ available threads.  This allows for composition with the `pwith` and `@pthreads`
 commands, and usage in more complex scenarios, such as stack processing.
 
 ```@docs
-pwith(fn::Function, pool)
-@pthreads
+twith(fn::Function, pool)
+@tthreads
 tmap(fn::Function, pool, itr)
 tforeach(pool, fn::Function, itr::AbstractVector)
 ```

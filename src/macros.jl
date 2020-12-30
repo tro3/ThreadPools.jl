@@ -293,8 +293,3 @@ macro tspawnat(thrdid, expr)
         end
     end
 end
-
-macro pspawnat(thrdid, expr)
-    @warn "`@pspawnat` is deprecated, use `tspawnat` instead."
-    return @tspawnat(thrdid, expr)
-end

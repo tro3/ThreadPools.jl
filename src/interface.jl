@@ -2,26 +2,19 @@ import Core.Compiler
 
 abstract type AbstractThreadPool end
 
-@deprecate pforeach(pool, fn::Function, itr) tforeach(pool, fn::Function, itr)
-@deprecate pforeach(fn::Function, pool, itr) tforeach(fn::Function, pool, itr)
-@deprecate pmap(pool, fn::Function, itr) tmap(pool, fn::Function, itr)
-@deprecate pmap(fn::Function, pool, itr) tmap(fn::Function, pool, itr)
-
-
 _detect_type(fn, itr) = Core.Compiler.return_type(fn, Tuple{eltype(itr)})
 
 
 """
-    tforeach(pool, fn::Function, itr)
-    tforeach(fn::Function, pool, itr)
+    tforeach(fn, pool, itr)
 
 Mimics `Base.foreach`, but launches the function evaluations onto the provided 
 pool to assign the tasks.
 
 # Example
 ```
-julia> pool = pwith(ThreadPools.LoggedQueuePool(1,2)) do pool
-         tforeach(pool,  x -> println((x,Threads.threadid())), 1:8)
+julia> pool = twith(ThreadPools.LoggedQueuePool(1,2)) do pool
+         tforeach(x -> println((x,Threads.threadid())), pool, 1:8)
        end;
 (2, 2)
 (1, 1)
@@ -35,26 +28,23 @@ julia> pool = pwith(ThreadPools.LoggedQueuePool(1,2)) do pool
 julia> plot(pool)
 ```
 """
-function tforeach(pool::AbstractThreadPool, fn::Function, itr)
-    tmap(pool, fn, itr)
+function tforeach(fn, pool::AbstractThreadPool, itr)
+    tmap(fn, pool, itr)
     nothing
 end
 
-tforeach(fn::Function, pool::AbstractThreadPool, itr) = tforeach(pool, fn, itr)
-tforeach(pool::AbstractThreadPool, fn::Function, itr1, itrs...) = tforeach(pool, x -> fn(x...), zip(itr1, itrs...))
-tforeach(fn::Function, pool::AbstractThreadPool, itr1, itrs...) = tforeach(pool, x -> fn(x...), zip(itr1, itrs...))
+tforeach(fn, pool::AbstractThreadPool, itr1, itrs...) = tforeach(x -> fn(x...), pool, zip(itr1, itrs...))
 
 
 """
-    tmap(pool, fn::Function, itr)
-    tmap(fn::Function, pool, itr)
+    tmap(fn, pool, itr)
 
 Mimics `Base.map`, but launches the function evaluations onto the provided 
 pool to assign the tasks.
 
 # Example
 ```
-julia> pool = pwith(ThreadPools.LoggedQueuePool(1,2)) do pool
+julia> pool = twith(ThreadPools.LoggedQueuePool(1,2)) do pool
          tmap(pool, 1:8) do x
            println((x,Threads.threadid()))
          end
@@ -71,21 +61,19 @@ julia> pool = pwith(ThreadPools.LoggedQueuePool(1,2)) do pool
 julia> plot(pool)
 ```
 """
-tmap(fn::Function, pool::AbstractThreadPool, itr) = tmap(pool, fn, itr)
-tmap(pool::AbstractThreadPool, fn::Function, itr1, itrs...) = tmap(pool, x -> fn(x...), zip(itr1, itrs...))
-tmap(fn::Function, pool::AbstractThreadPool, itr1, itrs...) = tmap(pool, x -> fn(x...), zip(itr1, itrs...))
+tmap(fn, pool::AbstractThreadPool, itr1, itrs...) = tmap(x -> fn(x...), pool, zip(itr1, itrs...))
 
 
 """
-    pwith(fn::Function, pool) -> pool
+    twith(fn, pool) -> pool
 
 Apply the functon `fn` to the provided pool and close the pool.  Returns the 
 closed pool for any desired analysis or plotting. 
 
 # Example
 ```
-julia> pwith(ThreadPools.QueuePool(1,2)) do pool
-         tforeach(pool, x -> println((x,Threads.threadid())), 1:8)
+julia> twith(ThreadPools.QueuePool(1,2)) do pool
+         tforeach(x -> println((x,Threads.threadid())), pool, 1:8)
        end;
 (2, 2)
 (1, 1)
@@ -99,7 +87,7 @@ julia> pwith(ThreadPools.QueuePool(1,2)) do pool
 Note in the above example, only two threads were used, as set by the 
 `QueuePool` setting.
 """
-function pwith(fn::Function, pool)
+function twith(fn, pool)
     fn(pool)
     close(pool)
     pool
@@ -107,15 +95,15 @@ end
 
 
 """
-    @pthreads pool
+    @tthreads pool
 
 Mimic the `Base.Threads.@threads` macro, but uses the provided pool to 
 assign the tasks.
 
 # Example
 ```
-julia> pwith(ThreadPools.QueuePool(1,2)) do pool
-         @pthreads pool for x in 1:8
+julia> twith(ThreadPools.QueuePool(1,2)) do pool
+         @tthreads pool for x in 1:8
            println((x,Threads.threadid()))
          end
        end;
@@ -129,14 +117,14 @@ julia> pwith(ThreadPools.QueuePool(1,2)) do pool
 (7, 1)
 ```
 """
-macro pthreads(pool, args...)
+macro tthreads(pool, args...)
     na = length(args)
     if na != 1
-        throw(ArgumentError("wrong number of arguments in @pthreads"))
+        throw(ArgumentError("wrong number of arguments in @tthreads"))
     end
     ex = args[1]
     if !isa(ex, Expr)
-        throw(ArgumentError("need an expression argument to @pthreads"))
+        throw(ArgumentError("need an expression argument to @tthreads"))
     end
     if ex.head === :for
         if ex.args[1] isa Expr && ex.args[1].head === :(=)
@@ -149,10 +137,10 @@ macro pthreads(pool, args...)
                 end
             end
         else
-            throw(ArgumentError("nested outer loops are not currently supported by @pthreads"))
+            throw(ArgumentError("nested outer loops are not currently supported by @tthreads"))
         end
     else
-        throw(ArgumentError("unrecognized argument to @pthreads"))
+        throw(ArgumentError("unrecognized argument to @tthreads"))
     end
 end
 

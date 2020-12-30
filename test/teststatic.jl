@@ -19,11 +19,11 @@ include("util.jl")
                 x.data += 1
             end
             pool = StaticPool()
-            tforeach(pool, fn!, objs)
+            tforeach(fn!, pool, objs)
             close(pool)
             @test [x.data for x in objs] == collect(2:N+1)
             @test primary
-            @inferred tforeach(pool, fn!, objs)
+            @inferred tforeach(fn!, pool, objs)
         end
 
         @testset "background" begin
@@ -34,10 +34,10 @@ include("util.jl")
                 x.data += 1
             end
             pool = StaticPool(2)
-            tforeach(pool, fn!, objs)
+            tforeach(fn!, pool, objs)
             close(pool)
             @test [x.data for x in objs] == collect(2:N+1)
-            @inferred tforeach(pool, fn!, objs)
+            @inferred tforeach(fn!, pool, objs)
         end
     end
 
@@ -51,10 +51,10 @@ include("util.jl")
                 x.data
             end
             pool = StaticPool()
-            @test tmap(pool, fn!, objs) == collect(1:N)
+            @test tmap(fn!, pool, objs) == collect(1:N)
             close(pool)
             @test primary
-            @inferred tmap(pool, fn!, objs)
+            @inferred tmap(fn!, pool, objs)
         end
 
         @testset "background" begin
@@ -65,9 +65,9 @@ include("util.jl")
                 x.data
             end
             pool = StaticPool(2)
-            @test tmap(pool, fn!, objs) == collect(1:N)
+            @test tmap(fn!, pool, objs) == collect(1:N)
             close(pool)
-            @inferred tmap(pool, fn!, objs)
+            @inferred tmap(fn!, pool, objs)
         end
     end
 
@@ -99,13 +99,13 @@ include("util.jl")
         end
     end
 
-    @testset "@pthreads" begin
+    @testset "@tthreads" begin
         @testset "foreground" begin
             N = 2 * Threads.nthreads()
             objs = [TestObj(x) for x in 1:N]
             primary = Threads.nthreads() == 1
             pool = StaticPool()
-            @pthreads pool for obj in objs
+            @tthreads pool for obj in objs
                 Threads.threadid() == 1 && (primary = true)
                 obj.data += 1
             end
@@ -118,7 +118,7 @@ include("util.jl")
             N = 2 * Threads.nthreads()
             objs = [TestObj(x) for x in 1:N]
             pool = StaticPool(2)
-            @pthreads pool for obj in objs
+            @tthreads pool for obj in objs
                 Threads.nthreads() == 1 || Threads.threadid() == 1 && error("Task on primary")
                 obj.data += 1
             end

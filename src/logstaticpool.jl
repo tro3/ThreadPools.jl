@@ -37,7 +37,7 @@ end
 # ThreadPool Interface
 #############################
 
-function tmap(pool::LoggedStaticPool, fn::Function, itr)
+function tmap(fn, pool::LoggedStaticPool, itr)
     data = collect(itr)
     applicable(fn, first(data)) || error("function can't be applied to iterator contents")
     N = length(data)

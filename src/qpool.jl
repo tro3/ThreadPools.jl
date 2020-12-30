@@ -77,14 +77,14 @@ end
 
 
 """
-    Base.put!(pool::QueuePool, fn::Function, args...)
-    Base.put!(fn::Function, pool::QueuePool, args...)
+    Base.put!(pool::QueuePool, fn, args...)
+    Base.put!(fn, pool::QueuePool, args...)
 
 Creates a task that runs `fn(args...)` and adds it to the pool, blocking 
 until the pool has an available thread.
 """
-Base.put!(pool::QueuePool, fn::Function, args...) = Base.put!(pool, Task(()->fn(args...)))
-Base.put!(fn::Function, pool::QueuePool, args...) = Base.put!(pool, Task(()->fn(args...)))
+Base.put!(pool::QueuePool, fn, args...) = Base.put!(pool, Task(()->fn(args...)))
+Base.put!(fn, pool::QueuePool, args...) = Base.put!(pool, Task(()->fn(args...)))
 
 
 """
@@ -187,7 +187,7 @@ Base.IteratorEltype(::ResultIterator) = Base.EltypeUnknown()
 # ThreadPool Interface
 #############################
 
-function tmap(pool::QueuePool, fn::Function, itr)
+function tmap(fn, pool::QueuePool, itr)
     data = collect(itr)
     applicable(fn, first(data)) || error("function can't be applied to iterator contents")
     N = length(data)

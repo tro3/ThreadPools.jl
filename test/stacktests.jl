@@ -20,7 +20,7 @@ end
 
         stack = Channel{TestObj}(1024) do stack
             for item in stack
-                put!(pool, fn, item)
+                put!(fn, pool, item)
             end
             close(pool)
         end
@@ -52,7 +52,7 @@ end
 
         stack = Channel{TestObj}(1024) do stack
             for item in stack
-                put!(pool, fn, item)
+                put!(fn, pool, item)
             end
             close(pool)
         end
@@ -84,7 +84,7 @@ end
 
         stack = Channel{TestObj}(1024) do stack
             for item in stack
-                put!(pool, fn, item)
+                put!(fn, pool, item)
             end
             close(pool)
         end
@@ -118,7 +118,7 @@ end
 
         stack = Channel{TestObj}(1024) do stack
             for item in stack
-                put!(pool, fn, item)
+                put!(fn, pool, item)
             end
             close(pool)
         end

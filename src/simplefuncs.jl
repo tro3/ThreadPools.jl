@@ -1,12 +1,6 @@
 
-@deprecate pmap(fn::Function, itrs...) tmap(fn::Function, itrs...)
-@deprecate pforeach(fn::Function, itrs...) tforeach(fn::Function, itrs...)
-@deprecate logpmap(fn::Function, itrs...) logtmap(fn::Function, itrs...)
-@deprecate logpforeach(fn::Function, itrs...) logtforeach(fn::Function, itrs...)
-
-
 """
-    tmap(fn::Function, itrs...) -> collection
+    tmap(fn, itrs...) -> collection
 
 Mimics `Base.map`, but launches the function evaluations onto all available 
 threads, using a pre-assigned scheduling strategy appropriate for uniform
@@ -29,15 +23,15 @@ julia> tmap(x -> begin; println((x,Threads.threadid())); x^2; end, 1:8)'
 Note that while the execution order is not guaranteed, the result order is. 
 Also note that the primary thread is used.
 """
-function tmap(fn::Function, itrs...)
+function tmap(fn, itrs...)
     pool = StaticPool()
-    result = tmap(pool, x->fn(x...), zip(itrs...))
+    result = tmap(x->fn(x...), pool, zip(itrs...))
     close(pool)
     return result
 end
 
 """
-    bmap(fn::Function, itrs...) -> collection
+    bmap(fn, itrs...) -> collection
 
 Mimics `Base.map`, but launches the function evaluations onto all available 
 threads except the primary, using a pre-assigned scheduling strategy 
@@ -60,15 +54,15 @@ julia> bmap(x -> begin; println((x,Threads.threadid())); x^2; end, 1:8)'
 Note that while the execution order is not guaranteed, the result order is, 
 Also note that the primary thread is not used.
 """
-function bmap(fn::Function, itrs...)
+function bmap(fn, itrs...)
     pool = StaticPool(2)
-    result = tmap(pool, x->fn(x...), zip(itrs...))
+    result = tmap(x->fn(x...), pool, zip(itrs...))
     close(pool)
     return result
 end
 
 """
-    qmap(fn::Function, itrs...) -> collection
+    qmap(fn, itrs...) -> collection
 
 Mimics `Base.map`, but launches the function evaluations onto all available 
 threads, using a queued scheduling strategy appropriate for nonuniform
@@ -91,15 +85,15 @@ julia> qmap(x -> begin; println((x,Threads.threadid())); x^2; end, 1:8)'
 Note that while the execution order is not guaranteed, the result order is. 
 Also note that the primary thread is used.
 """
-function qmap(fn::Function, itrs...)
+function qmap(fn, itrs...)
     pool = QueuePool()
-    result = tmap(pool, x->fn(x...), zip(itrs...))
+    result = tmap(x->fn(x...), pool, zip(itrs...))
     close(pool)
     return result
 end
 
 """
-    qbmap(fn::Function, itrs...) -> collection
+    qbmap(fn, itrs...) -> collection
 
 Mimics `Base.map`, but launches the function evaluations onto all available 
 threads except the primary, using a queued scheduling strategy appropriate 
@@ -122,15 +116,15 @@ julia> qbmap(x -> begin; println((x,Threads.threadid())); x^2; end, 1:8)'
 Note that while the execution order is not guaranteed, the result order is, 
 Also note that the primary thread is not used.
 """
-function qbmap(fn::Function, itrs...)
+function qbmap(fn, itrs...)
     pool = QueuePool(2)
-    result = tmap(pool, x->fn(x...), zip(itrs...))
+    result = tmap(x->fn(x...), pool, zip(itrs...))
     close(pool)
     return result
 end
 
 """
-    logtmap(fn::Function, itrs...) -> (pool, collection)
+    logtmap(fn, itrs...) -> (pool, collection)
 
 Mimics `Base.map`, but launches the function evaluations onto all available 
 threads, using a pre-assigned scheduling strategy appropriate for uniform
@@ -161,15 +155,15 @@ julia> plot(pool)
 Note that while the execution order is not guaranteed, the result order is. 
 Also note that the primary thread is used.
 """
-function logtmap(fn::Function, itrs...)
+function logtmap(fn, itrs...)
     pool = LoggedStaticPool()
-    result = tmap(pool, x->fn(x...), zip(itrs...))
+    result = tmap(x->fn(x...), pool, zip(itrs...))
     close(pool)
     return pool, result
 end
 
 """
-    logbmap(fn::Function, itrs...) -> (pool, collection)
+    logbmap(fn, itrs...) -> (pool, collection)
 
 Mimics `Base.map`, but launches the function evaluations onto all available 
 threads except the primary, using a pre-assigned scheduling strategy 
@@ -200,15 +194,15 @@ julia> plot(pool)
 Note that while the execution order is not guaranteed, the result order is, 
 Also note that the primary thread is not used.
 """
-function logbmap(fn::Function, itrs...)
+function logbmap(fn, itrs...)
     pool = LoggedStaticPool(2)
-    result = tmap(pool, x->fn(x...), zip(itrs...))
+    result = tmap(x->fn(x...), pool, zip(itrs...))
     close(pool)
     return pool, result
 end
 
 """
-    logqmap(fn::Function, itrs...) -> (pool, collection)
+    logqmap(fn, itrs...) -> (pool, collection)
 
 Mimics `Base.map`, but launches the function evaluations onto all available 
 threads, using a queued scheduling strategy appropriate for nonuniform
@@ -239,15 +233,15 @@ julia> plot(pool)
 Note that while the execution order is not guaranteed, the result order is. 
 Also note that the primary thread is used.
 """
-function logqmap(fn::Function, itrs...)
+function logqmap(fn, itrs...)
     pool = LoggedQueuePool()
-    result = tmap(pool, x->fn(x...), zip(itrs...))
+    result = tmap(x->fn(x...), pool, zip(itrs...))
     close(pool)
     return pool, result
 end
 
 """
-    logqbmap(fn::Function, itrs...) -> (pool, collection)
+    logqbmap(fn, itrs...) -> (pool, collection)
 
 Mimics `Base.map`, but launches the function evaluations onto all available 
 threads except the primary, using a queued scheduling strategy appropriate 
@@ -278,16 +272,16 @@ julia> plot(pool)
 Note that while the execution order is not guaranteed, the result order is, 
 Also note that the primary thread is not used.
 """
-function logqbmap(fn::Function, itrs...)
+function logqbmap(fn, itrs...)
     pool = LoggedQueuePool(2)
-    result = tmap(pool, x->fn(x...), zip(itrs...))
+    result = tmap(x->fn(x...), pool, zip(itrs...))
     close(pool)
     return pool, result
 end
 
 
 """
-    tforeach(fn::Function, itrs...)
+    tforeach(fn, itrs...)
 
 Mimics `Base.foreach`, but launches the function evaluations onto all available 
 threads, using a pre-assigned scheduling strategy appropriate for uniform
@@ -308,16 +302,16 @@ julia> tforeach(x -> println((x,Threads.threadid())), 1:8)
 Note that the execution order is not guaranteed, and that the primary thread 
 is used.
 """
-function tforeach(fn::Function, itrs...)
+function tforeach(fn, itrs...)
     pool = StaticPool()
-    tforeach(pool, x->fn(x...), zip(itrs...))
+    tforeach(x->fn(x...), pool, zip(itrs...))
     close(pool)
     nothing
 end
 
 
 """
-    bforeach(fn::Function, itrs...)
+    bforeach(fn, itrs...)
 
 Mimics `Base.foreach`, but launches the function evaluations onto all available 
 threads except the primary, using a pre-assigned scheduling strategy appropriate 
@@ -338,15 +332,15 @@ julia> bforeach(x -> println((x,Threads.threadid())), 1:8)
 Note that the execution order is not guaranteed, and that the primary thread 
 is not used.
 """
-function bforeach(fn::Function, itrs...)
+function bforeach(fn, itrs...)
     pool = StaticPool(2)
-    tforeach(pool, x->fn(x...), zip(itrs...))
+    tforeach(x->fn(x...), pool, zip(itrs...))
     close(pool)
     nothing
 end
 
 """
-    qforeach(fn::Function, itrs...)
+    qforeach(fn, itrs...)
 
 Mimics `Base.foreach`, but launches the function evaluations onto all available 
 threads, using a queued scheduling strategy appropriate for nonuniform
@@ -367,16 +361,16 @@ julia> qforeach(x -> println((x,Threads.threadid())), 1:8)
 Note that the execution order is not guaranteed, and that the primary thread 
 is used.
 """
-function qforeach(fn::Function, itrs...)
+function qforeach(fn, itrs...)
     pool = QueuePool()
-    tforeach(pool, x->fn(x...), zip(itrs...))
+    tforeach(x->fn(x...), pool, zip(itrs...))
     close(pool)
     nothing
 end
 
 
 """
-    qbforeach(fn::Function, itrs...)
+    qbforeach(fn, itrs...)
 
 Mimics `Base.foreach`, but launches the function evaluations onto all available 
 threads except the primary, using a queued scheduling strategy appropriate for 
@@ -397,9 +391,9 @@ julia> qbforeach(x -> println((x,Threads.threadid())), 1:8)
 Note that the execution order is not guaranteed, and that the primary thread 
 is not used.
 """
-function qbforeach(fn::Function, itrs...)
+function qbforeach(fn, itrs...)
     pool = QueuePool(2)
-    tforeach(pool, x->fn(x...), zip(itrs...))
+    tforeach(x->fn(x...), pool, zip(itrs...))
     close(pool)
     nothing
 end
@@ -407,7 +401,7 @@ end
 
 
 """
-    logtforeach(fn::Function, itrs...) -> pool
+    logtforeach(fn, itrs...) -> pool
 
 Mimics `Base.foreach`, but launches the function evaluations onto all available 
 threads, using a pre-assigned scheduling strategy appropriate for uniform
@@ -431,16 +425,16 @@ julia> plot(pool)
 Note that the execution order is not guaranteed, and that the primary thread 
 is used.
 """
-function logtforeach(fn::Function, itrs...)
+function logtforeach(fn, itrs...)
     pool = LoggedStaticPool()
-    tforeach(pool, x->fn(x...), zip(itrs...))
+    tforeach(x->fn(x...), pool, zip(itrs...))
     close(pool)
     return pool
 end
 
 
 """
-    logbforeach(fn::Function, itrs...)
+    logbforeach(fn, itrs...)
 
 Mimics `Base.foreach`, but launches the function evaluations onto all available 
 threads except the primary, using a pre-assigned scheduling strategy appropriate 
@@ -464,16 +458,16 @@ julia> plot(pool)
 Note that the execution order is not guaranteed, and that the primary thread 
 is not used.
 """
-function logbforeach(fn::Function, itrs...)
+function logbforeach(fn, itrs...)
     pool = LoggedStaticPool(2)
-    tforeach(pool, x->fn(x...), zip(itrs...))
+    tforeach(x->fn(x...), pool, zip(itrs...))
     close(pool)
     return pool
 end
 
 
 """
-    logqforeach(fn::Function, itrs...)
+    logqforeach(fn, itrs...)
 
 Mimics `Base.foreach`, but launches the function evaluations onto all available 
 threads, using a queued scheduling strategy appropriate for nonuniform
@@ -497,16 +491,16 @@ Note that the execution order is not guaranteed, and that the primary thread
 is used.  Returns a logged pool that can be analyzed with the logging functions 
 and `plot`ted.
 """
-function logqforeach(fn::Function, itrs...)
+function logqforeach(fn, itrs...)
     pool = LoggedQueuePool()
-    tforeach(pool, x->fn(x...), zip(itrs...))
+    tforeach(x->fn(x...), pool, zip(itrs...))
     close(pool)
     return pool
 end
 
 
 """
-    logqbforeach(fn::Function, itrs...)
+    logqbforeach(fn, itrs...)
 
 Mimics `Base.foreach`, but launches the function evaluations onto all available 
 threads except the primary, using a queued scheduling strategy appropriate for 
@@ -530,9 +524,9 @@ julia> plot(pool)
 Note that the execution order is not guaranteed, and that the primary thread 
 is not used.
 """
-function logqbforeach(fn::Function, itrs...)
+function logqbforeach(fn, itrs...)
     pool = LoggedQueuePool(2)
-    tforeach(pool, x->fn(x...), zip(itrs...))
+    tforeach(x->fn(x...), pool, zip(itrs...))
     close(pool)
     return pool
 end
