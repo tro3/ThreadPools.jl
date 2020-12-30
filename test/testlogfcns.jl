@@ -12,7 +12,7 @@ include("util.jl")
     @testset "read/write logs" begin
         N = 2 * Threads.nthreads()
         pool = LoggedStaticPool()
-        tforeach(pool, x->sleep(0.01*x), 1:N)
+        tforeach(x->sleep(0.01*x), pool, 1:N)
         close(pool)
         dumplog("_tmp.log", pool)
         log2 = readlog("_tmp.log")

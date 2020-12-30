@@ -14,7 +14,7 @@ function _pthread_macro(pool, log, args...)
             range = ex.args[1].args[2]
             body = ex.args[2]
             return quote
-                pool = pwith($pool) do p
+                pool = twith($pool) do p
                     tforeach(p, $(esc(range))) do $(esc(index))
                         $(esc(body))
                     end

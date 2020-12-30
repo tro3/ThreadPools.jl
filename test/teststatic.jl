@@ -71,12 +71,12 @@ include("util.jl")
         end
     end
 
-    @testset "pwith" begin
+    @testset "twith" begin
         @testset "foreground" begin
             N = 2 * Threads.nthreads()
             objs = [TestObj(x) for x in 1:N]
             primary = Threads.nthreads() == 1
-            pwith(StaticPool()) do pool
+            twith(StaticPool()) do pool
                 tforeach(pool, objs) do x
                     Threads.threadid() == 1 && (primary = true)
                     x.data += 1
@@ -89,7 +89,7 @@ include("util.jl")
         @testset "background" begin
             N = 2 * Threads.nthreads()
             objs = [TestObj(x) for x in 1:N]
-            pwith(StaticPool(2)) do pool
+            twith(StaticPool(2)) do pool
                 tforeach(pool, objs) do x
                     Threads.nthreads() == 1 || Threads.threadid() == 1 && error("Task on primary")
                     x.data += 1
