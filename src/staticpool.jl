@@ -51,10 +51,56 @@ function tmap(fn, pool::StaticPool, itr)
         end
     end
 
-    Threads.@threads for tid in 1:Threads.nthreads()
+    tasks = Channel(Inf)
+    for tid in 1:Threads.nthreads()
         ind = findfirst(t->t==tid, pool.tids)
-        isnothing(ind) || _fn(ind)
+        if !isnothing(ind)
+            task = @tspawnat tid _fn(ind)
+            put!(tasks, task)
+        end
     end
+    _sync_end(tasks)
 
     return result
+end
+
+
+# From Julia PR #39007
+function _schedule_result(t, rs)
+    schedule(Task(() -> begin
+        ex = nothing
+        try
+            wait(t)
+        catch e
+            ex = e
+        finally
+            put!(rs, ex)
+        end
+    end))
+end
+
+# Modified from Julia PR #39007 to duplicate error handling of tmap
+function _sync_end(c::Channel{Any})
+    try
+        n = 0
+        isready(c) || return
+        while true
+            t = take!(c)
+            if t isa Exception
+                while isready(c)                       # Clean the channel
+                    take!(c)
+                end
+                throw(t)
+            elseif isnothing(t)                        # Successful result from monitor.
+                n -= 1                                 # Leave if nothing remains.
+                n == 0 && !isready(c) && break
+            else                                       # Not a monitor result - must be
+                n += 1                                 # a new waitable. Create a new
+                _schedule_result(t, c)                 # monitor and return to Channel
+            end
+        end
+    finally
+        close(c)
+    end
+    nothing
 end

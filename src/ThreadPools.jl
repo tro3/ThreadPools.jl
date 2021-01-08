@@ -10,12 +10,12 @@ export tforeach, bforeach, qforeach, qbforeach
 export logtforeach, logbforeach, logqforeach, logqbforeach
 
 include("interface.jl")
+include("macros.jl")
 include("logs.jl")
 include("staticpool.jl")
 include("qpool.jl")
 include("logstaticpool.jl")
 include("logqpool.jl")
-include("macros.jl")
 include("simplefuncs.jl")
 
 

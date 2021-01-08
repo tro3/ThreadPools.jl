@@ -69,6 +69,27 @@ include("util.jl")
             close(pool)
             @inferred tmap(fn!, pool, objs)
         end
+
+        if Threads.nthreads() > 2
+            t = @tspawnat 2 begin
+                @testset "schedule from background" begin
+                    N = 2 * Threads.nthreads()
+                    objs = [TestObj(x) for x in 1:N]
+                    fn! = (x) -> begin
+                        Threads.threadid() == 1 && error("Task on primary")
+                        Threads.threadid() == 2 && error("Task on scheduler")
+                        (x.data, Threads.threadid())
+                    end
+                    pool = StaticPool(3)
+                    result = tmap(fn!, pool, objs)
+                    @test [x[1] for x in result] == collect(1:N)
+                    @test sort(collect(Set([x[2] for x in result]))) == collect(3:Threads.nthreads())
+                    close(pool)
+                    @inferred tmap(fn!, pool, objs)
+                end
+            end
+            wait(t)
+        end
     end
 
     @testset "twith" begin
