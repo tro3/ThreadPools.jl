@@ -2,7 +2,7 @@ module ThreadPools
 
 export @tthreads, @bthreads, @qthreads, @qbthreads
 export @logthreads, @logbthreads, @logqthreads, @logqbthreads
-export twith, results, isactive, @tspawnat
+export twith, isactive, @tspawnat
 export dumplog, readlog, showactivity, showstats
 export tmap, bmap, qmap, qbmap
 export logtmap, logbmap, logqmap, logqbmap
