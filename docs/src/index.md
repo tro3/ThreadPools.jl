@@ -218,7 +218,6 @@ ThreadPools.StaticPool()
 ThreadPools.LoggedStaticPool()
 ```
 
-
 ### QueuePools
 ```@docs
 ThreadPools.QueuePool()
@@ -227,6 +226,6 @@ Base.put!(pool::ThreadPools.QueuePool, t::Task)
 Base.put!(pool::ThreadPools.QueuePool, fn::Function, args...)
 Base.take!(pool::ThreadPools.QueuePool)
 Base.iterate(pool::ThreadPools.QueuePool, state)
-results(pool::ThreadPools.QueuePool)
+poolresults(pool::ThreadPools.QueuePool)
 isactive(pool::ThreadPools.QueuePool)
 ```
