@@ -144,7 +144,7 @@ struct ResultIterator
 end
 
 """
-    results(pool::QueuePool) -> result iterator
+    poolresults(pool::QueuePool) -> result iterator
 
 Returns an iterator over the `fetch`ed results of the pooled tasks.
 
@@ -160,7 +160,7 @@ julia> @async begin
          close(pool)
        end;
 
-julia> for r in results(pool)
+julia> for r in poolresults(pool)
          println(r)
        end
 6
@@ -170,7 +170,7 @@ julia> for r in results(pool)
 ```
 Note that the execution order across the threads is not guaranteed.
 """
-results(pool::QueuePool) = ResultIterator(pool)
+poolresults(pool::QueuePool) = ResultIterator(pool)
 
 function Base.iterate(itr::ResultIterator, state=nothing)
     x = iterate(itr.pool.outq, state)

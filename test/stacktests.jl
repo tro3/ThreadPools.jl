@@ -29,7 +29,7 @@ end
             put!(stack, item)
         end
 
-        for result in results(pool)
+        for result in poolresults(pool)
             push!(output, result)
             if result % 3 == 0
                 put!(stack, TestObj(11))
@@ -61,7 +61,7 @@ end
             put!(stack, item)
         end
 
-        for result in results(pool)
+        for result in poolresults(pool)
             push!(output, result)
             if result % 3 == 0
                 put!(stack, TestObj(11))
@@ -93,7 +93,7 @@ end
             put!(stack, item)
         end
 
-        for result in results(pool)
+        for result in poolresults(pool)
             push!(output, result)
             if result % 3 == 0
                 put!(stack, TestObj(11))
@@ -127,7 +127,7 @@ end
             put!(stack, item)
         end
 
-        for result in results(pool)
+        for result in poolresults(pool)
             push!(output, result)
             if result % 3 == 0
                 put!(stack, TestObj(11))

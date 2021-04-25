@@ -154,11 +154,11 @@ isactive(pool::LoggedQueuePool) = isready(pool.inq) || isready(pool.outq) || poo
 #############################
 
 """
-    results(pool::LoggedQueuePool) -> result iterator
+    poolresults(pool::LoggedQueuePool) -> result iterator
 
-Identical to [`results(pool::LoggedQueuePool)`](@ref).
+Identical to [`poolresults(pool::LoggedQueuePool)`](@ref).
 """
-results(pool::LoggedQueuePool) = ResultIterator(pool)
+poolresults(pool::LoggedQueuePool) = ResultIterator(pool)
 
 
 
