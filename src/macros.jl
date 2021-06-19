@@ -16,7 +16,9 @@ function _pthread_macro(pool, log, args...)
             return quote
                 pool = twith($pool) do p
                     tforeach(p, $(esc(range))) do $(esc(index))
-                        $(esc(body))
+                        for _tmp_var_dontusename in [0] # To allow `continue` to function in body
+                            $(esc(body))
+                        end
                     end
                 end
                 $(esc(log)) ? pool : nothing
