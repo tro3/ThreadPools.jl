@@ -197,14 +197,14 @@ logqbforeach(fn, itr)
 
 The above macros invoke two base structures, [`ThreadPools.StaticPool`](@ref) and 
 [`ThreadPools.QueuePool`](@ref), each of which can be assigned to a subset of the 
-available threads.  This allows for composition with the `pwith` and `@pthreads` 
+available threads.  This allows for composition with the `twith` and `@tthreads` 
 commands, and usage in more complex scenarios, such as stack processing.
 
 ```@docs
 twith(fn::Function, pool)
 @tthreads
-tmap(fn::Function, pool, itr)
-tforeach(pool, fn::Function, itr::AbstractVector)
+tmap(fn, pool::ThreadPools.AbstractThreadPool, itr1, itrs...)
+tforeach(fn, pool::ThreadPools.AbstractThreadPool, itr)
 ```
 
 ### AbstractThreadPool
