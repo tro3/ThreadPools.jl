@@ -10,7 +10,7 @@ function uses_all_threads()
     bg_nthreads = Threads.nthreads() - 1
     bg_threads = zeros(bg_nthreads)
     futures = map(1:bg_nthreads) do i
-        return spawn_background() do
+        return spawnbg() do
             id = Threads.threadid()
             bg_threads[id - 1] = id
             return id
@@ -42,7 +42,7 @@ function spam_threads(f, spam_factor)
     thread_ids = []
     time_spent = @elapsed begin
         futures = map(1:n_executions) do i
-            return spawn_background() do
+            return spawnbg() do
                 f()
                 return Threads.threadid()
             end
@@ -62,7 +62,7 @@ end
     nthreads = Threads.nthreads()
     bg_nthreads = nthreads - 1
     if bg_nthreads == 0
-        @test fetch(spawn_background(()-> Threads.threadid())) == 1
+        @test fetch(spawnbg(()-> Threads.threadid())) == 1
     else
         @testset "scheduling" begin
             # When we quickly schedule nthreads work items, the implementation should use all threads
@@ -89,7 +89,7 @@ end
     end
 
     @testset "error handling" begin
-        @test_throws CapturedException checked_fetch(spawn_background(() -> error("hey")))
+        @test_throws CapturedException checked_fetch(spawnbg(() -> error("hey")))
     end
 
 end

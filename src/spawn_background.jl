@@ -11,17 +11,17 @@ function checked_fetch(future)
 end
 
 """
-    spawn_background(f)
+    spawnbg(f)
 
 Spawn work on any available background thread.
 Captures any exception thrown in the thread, to give better stacktraces.
 
-You can use `checked_fetch(spawn_background(f))` to rethrow any exception.
+You can use `checked_fetch(spawnbg(f))` to rethrow any exception.
 
     ** Warning ** this doesn't compose with other ways of scheduling threads
     So, one should use `spawn_background` exclusively in each Julia process.
 """
-function spawn_background(f)
+function spawnbg(f)
     # -1, because we don't spawn on foreground thread 1
     nbackground = Threads.nthreads() - 1
     if nbackground == 0
