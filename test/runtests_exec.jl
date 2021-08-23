@@ -1,4 +1,4 @@
-
+using Test, ThreadPools
 include("teststatic.jl")
 include("testlogstatic.jl")
 include("testq.jl")
@@ -14,3 +14,4 @@ include("testmultiarg.jl")
 include("testmisc.jl")
 include("testplots.jl")
 include("errorhandling.jl")
+include("spawn_background.jl")
