@@ -8,6 +8,7 @@ export tmap, bmap, qmap, qbmap
 export logtmap, logbmap, logqmap, logqbmap
 export tforeach, bforeach, qforeach, qbforeach
 export logtforeach, logbforeach, logqforeach, logqbforeach
+export spawn_background, checked_fetch
 
 include("interface.jl")
 include("macros.jl")
@@ -17,6 +18,7 @@ include("qpool.jl")
 include("logstaticpool.jl")
 include("logqpool.jl")
 include("simplefuncs.jl")
+include("spawn_background.jl")
 
 
 export @pthreads, pwith
