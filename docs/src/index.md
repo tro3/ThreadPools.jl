@@ -34,8 +34,9 @@ but in the background. There are also [`qmap`](@ref), [`qforeach`](@ref),
 [`qbmap`](@ref), and [`qbforeach`](@ref).
 
 The package also exposes a lower-level [`@tspawnat`](@ref) macro that mimics the 
-`Base.Threads.@spawn` macro, but allows direct thread assignment for users who want 
-to develop their own scheduling.
+`Base.Threads.@spawn` macro but allows direct thread assignment for users who want 
+to develop their own scheduling and a [`spawnbg`](@ref) function that will spawn 
+a function onto an available background thread.
 
 
 ### Simple Macro/Function Selection
@@ -189,6 +190,7 @@ logqforeach(fn, itr)
 logqbforeach(fn, itr)
 
 @tspawnat
+spawnbg(fn)
 ```
 
 ## Composable API

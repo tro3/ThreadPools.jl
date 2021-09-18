@@ -8,7 +8,7 @@ export tmap, bmap, qmap, qbmap
 export logtmap, logbmap, logqmap, logqbmap
 export tforeach, bforeach, qforeach, qbforeach
 export logtforeach, logbforeach, logqforeach, logqbforeach
-export spawn_background, checked_fetch
+export spawnbg, checked_fetch
 
 include("interface.jl")
 include("macros.jl")
