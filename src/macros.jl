@@ -34,7 +34,7 @@ end
 """
     @bthreads
 
-Mimics `Base.Threads.@threads, but keeps the iterated tasks off if the primary 
+Mimics `Base.Threads.@threads, but keeps the iterated tasks off if the primary
 thread.`
 
 # Example
@@ -54,7 +54,7 @@ julia> @bthreads for x in 1:8
 Note that execution order is not guaranteed, but the primary thread does not
 show up on any of the jobs.
 """
-macro bthreads(args...) 
+macro bthreads(args...)
     return _pthread_macro(:(StaticPool(2)), false, args...)
     nothing
 end
@@ -62,10 +62,10 @@ end
 """
     @qthreads
 
-Mimics `Base.Threads.@threads`, but uses a task queueing strategy, only starting 
+Mimics `Base.Threads.@threads`, but uses a task queueing strategy, only starting
 a new task when an previous one (on any thread) has completed.  This can provide
-performance advantages when the iterated tasks are very nonuniform in length. 
-The primary thread is used.  To prevent usage of the primary thread, see 
+performance advantages when the iterated tasks are very nonuniform in length.
+The primary thread is used.  To prevent usage of the primary thread, see
 [`@qbthreads`](@ref).
 
 # Example
@@ -84,17 +84,17 @@ julia> @qthreads for x in 1:8
 ```
 Note that execution order is not guaranteed and the primary thread is used.
 """
-macro qthreads(args...) 
+macro qthreads(args...)
     return _pthread_macro(:(QueuePool(1)), false, args...)
 end
 
 """
     @qbthreads
 
-Mimics `Base.Threads.@threads`, but uses a task queueing strategy, only starting 
+Mimics `Base.Threads.@threads`, but uses a task queueing strategy, only starting
 a new task when an previous one (on any thread) has completed.  This can provide
-performance advantages when the iterated tasks are very nonuniform in length. 
-The primary thread is not used.  To allow usage of the primary thread, see 
+performance advantages when the iterated tasks are very nonuniform in length.
+The primary thread is not used.  To allow usage of the primary thread, see
 [`@qthreads`](@ref).
 
 # Example
@@ -114,14 +114,14 @@ julia> @qbthreads for x in 1:8
 Note that execution order is not guaranteed, but the primary thread does not
 show up on any of the jobs.
 """
-macro qbthreads(args...) 
+macro qbthreads(args...)
     return _pthread_macro(:(QueuePool(2)), false, args...)
 end
 
 """
     @logthreads -> pool
 
-Mimics `Base.Threads.@threads`.  Returns a logged pool that can be analyzed with 
+Mimics `Base.Threads.@threads`.  Returns a logged pool that can be analyzed with
 the logging functions and `plot`ted.
 
 # Example
@@ -142,15 +142,15 @@ julia> plot(pool)
 ```
 Note that execution order is not guaranteed and the primary thread is used.
 """
-macro logthreads(args...) 
+macro logthreads(args...)
     return _pthread_macro(:(LoggedStaticPool(1)), true, args...)
 end
 
 """
     @logbthreads -> pool
 
-Mimics `Base.Threads.@threads, but keeps the iterated tasks off if the primary 
-thread.`  Returns a logged pool that can be analyzed with the logging functions 
+Mimics `Base.Threads.@threads, but keeps the iterated tasks off if the primary
+thread.`  Returns a logged pool that can be analyzed with the logging functions
 and `plot`ted.
 
 # Example
@@ -172,17 +172,17 @@ julia> plot(pool)
 Note that execution order is not guaranteed, but the primary thread does not
 show up on any of the jobs.
 """
-macro logbthreads(args...) 
+macro logbthreads(args...)
     return _pthread_macro(:(LoggedStaticPool(2)), true, args...)
 end
 
 """
     @logqthreads -> pool
 
-Mimics `Base.Threads.@threads`, but uses a task queueing strategy, only starting 
-a new task when an previous one (on any thread) has completed.  Returns a logged 
-pool that can be analyzed with the logging functions and `plot`ted. The primary 
-thread is used.  To prevent usage of the primary thread, see 
+Mimics `Base.Threads.@threads`, but uses a task queueing strategy, only starting
+a new task when an previous one (on any thread) has completed.  Returns a logged
+pool that can be analyzed with the logging functions and `plot`ted. The primary
+thread is used.  To prevent usage of the primary thread, see
 [`@logqbthreads`](@ref).
 
 # Example
@@ -203,17 +203,17 @@ julia> plot(pool)
 ```
 Note that execution order is not guaranteed and the primary thread is used.
 """
-macro logqthreads(args...) 
+macro logqthreads(args...)
     return _pthread_macro(:(LoggedQueuePool(1)), true, args...)
 end
 
 """
     @logqbthreads -> pool
 
-Mimics `Base.Threads.@threads`, but uses a task queueing strategy, only starting 
-a new task when an previous one (on any thread) has completed.  Returns a logged 
-pool that can be analyzed with the logging functions and `plot`ted. The primary 
-thread is not used.  To allow usage of the primary thread, see 
+Mimics `Base.Threads.@threads`, but uses a task queueing strategy, only starting
+a new task when an previous one (on any thread) has completed.  Returns a logged
+pool that can be analyzed with the logging functions and `plot`ted. The primary
+thread is not used.  To allow usage of the primary thread, see
 [`@logqthreads`](@ref).
 
 # Example
@@ -235,7 +235,7 @@ julia> plot(pool)
 Note that execution order is not guaranteed, but the primary thread does not
 show up on any of the jobs.
 """
-macro logqbthreads(args...) 
+macro logqbthreads(args...)
     return _pthread_macro(:(LoggedQueuePool(2)), true, args...)
 end
 
@@ -255,9 +255,9 @@ julia> fetch(t)
 ```
 """
 macro tspawnat(thrdid, expr)
-    if VERSION >= v"1.4"
+    @static if VERSION >= v"1.4"
         letargs = Base._lift_one_interp!(expr)
-    
+
         thunk = esc(:(()->($expr)))
         var = esc(Base.sync_varname)
         tid = esc(thrdid)
@@ -267,7 +267,7 @@ macro tspawnat(thrdid, expr)
             end
             let $(letargs...)
                 local task = Task($thunk)
-                task.sticky = false
+                task.sticky = VERSION >= v"1.7" # disallow task migration which was introduced in 1.7
                 ccall(:jl_set_task_tid, Cvoid, (Any, Cint), task, $tid-1)
                 if $(Expr(:islocal, var))
                     put!($var, task)

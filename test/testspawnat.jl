@@ -18,7 +18,7 @@ end
 
 @testset "@tspawnat" begin
 
-    @testset "@normal operation" begin
+    @testset "normal operation" begin
         obj = TestObj(0)
         function fn!(obj)
             sleep(0.1)
@@ -28,6 +28,27 @@ end
         @test obj.data == 0
         wait(task)
         @test obj.data == Threads.nthreads()
+    end
+
+    function busywait(secs)
+        tstart = time()
+        while time() < tstart + secs
+        end
+    end
+
+    @testset "sticky tasks" begin
+        tasks = Task[]
+        @sync for tid in rand(1:Threads.nthreads(), 1000)
+            task = @tspawnat tid begin
+                yield()
+                busywait(rand() * 0.01)
+                yield()
+                (tid, Threads.threadid())
+            end
+            push!(tasks, task)
+        end
+        results = fetch.(tasks)
+        @test all(t->first(t) == last(t), results)
     end
 
     @ifv1p4 begin
@@ -42,7 +63,7 @@ end
             t1 = @tspawnat max(1, Threads.nthreads()) foo($x)
             x += 1
             t2 = @tspawnat max(1, Threads.nthreads()-1) foo($x)
-            
+
             test_sum = fetch(t1) + fetch(t2)
             @test expect_sum == test_sum
         end
